@@ -61,6 +61,11 @@ spec:
           status:
             description: InstrumentedApplicationStatus defines the observed state
               of InstrumentedApplication
+            properties:
+              lastError:
+                description: if the application was not instrumented, this will be
+                  set to a human readable text with the error details
+                type: string
             type: object
         type: object
     served: true

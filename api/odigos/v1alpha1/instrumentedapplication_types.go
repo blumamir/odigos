@@ -28,6 +28,8 @@ type InstrumentedApplicationSpec struct {
 
 // InstrumentedApplicationStatus defines the observed state of InstrumentedApplication
 type InstrumentedApplicationStatus struct {
+	// if the application was not instrumented, this will be set to a human readable text with the error details
+	LastError string `json:"lastError,omitempty"`
 }
 
 //+genclient

@@ -2,6 +2,8 @@ package kube
 
 import (
 	"context"
+	"errors"
+
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/keyval-dev/odigos/api/odigos/v1alpha1"
 	"github.com/keyval-dev/odigos/common"
@@ -24,20 +26,38 @@ func inspectRuntimesOfRunningPods(ctx context.Context, logger *logr.Logger, labe
 	pods, err := getRunningPods(ctx, labels, object.GetNamespace(), kubeClient)
 	if err != nil {
 		logger.Error(err, "error fetching running pods")
+		persistErr := persistInstrumentedAppError(ctx, err, object, kubeClient)
+		if persistErr != nil {
+			logger.Error(persistErr, "error during persisting last error into instrumentedApplication")
+		}
 		return ctrl.Result{}, err
 	}
 
 	if len(pods) == 0 {
+		err := errors.New("could not find any running pods")
+		persistErr := persistInstrumentedAppError(ctx, err, object, kubeClient)
+		if persistErr != nil {
+			logger.Error(persistErr, "error during persisting last error into instrumentedApplication")
+		}
 		return ctrl.Result{}, nil
 	}
 
 	runtimeResults, err := runtimeInspection(pods)
 	if err != nil {
 		logger.Error(err, "error inspecting pods")
+		persistErr := persistInstrumentedAppError(ctx, err, object, kubeClient)
+		if persistErr != nil {
+			logger.Error(persistErr, "error during persisting last error into instrumentedApplication")
+		}
 		return ctrl.Result{}, err
 	}
 
 	if len(runtimeResults) == 0 {
+		err := errors.New("could not extract any runtime information")
+		persistErr := persistInstrumentedAppError(ctx, err, object, kubeClient)
+		if persistErr != nil {
+			logger.Error(persistErr, "error during persisting last error into instrumentedApplication")
+		}
 		return ctrl.Result{}, nil
 	}
 
@@ -87,14 +107,35 @@ func runtimeInspection(pods []corev1.Pod) ([]common.LanguageByContainer, error) 
 	return results, nil
 }
 
-func persistRuntimeResults(ctx context.Context, results []common.LanguageByContainer, owner client.Object, kubeClient client.Client, scheme *runtime.Scheme) error {
-	updatedIa := &odigosv1.InstrumentedApplication{
+func instrumentedAppFromOwner(owner client.Object) *odigosv1.InstrumentedApplication {
+	name := utils.GetRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind)
+	namespace := owner.GetNamespace()
+	return &odigosv1.InstrumentedApplication{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.GetRuntimeObjectName(owner.GetName(), owner.GetObjectKind().GroupVersionKind().Kind),
-			Namespace: owner.GetNamespace(),
+			Name:      name,
+			Namespace: namespace,
 		},
 	}
+}
 
+func persistInstrumentedAppError(ctx context.Context, err error, owner client.Object, kubeClient client.Client) error {
+	updatedIa := instrumentedAppFromOwner(owner)
+	operationResult, err := controllerutil.CreateOrPatch(ctx, kubeClient, updatedIa, func() error {
+		updatedIa.Spec = odigosv1.InstrumentedApplicationSpec{}
+		updatedIa.Status.LastError = err.Error()
+		return nil
+	})
+
+	if operationResult != controllerutil.OperationResultNone {
+		log.Logger.V(0).Info("updated error into instrumented application", "result", operationResult, "name", owner.GetName(), "kind",
+			owner.GetObjectKind().GroupVersionKind().Kind, "namespace", owner.GetNamespace())
+	}
+
+	return err
+}
+
+func persistRuntimeResults(ctx context.Context, results []common.LanguageByContainer, owner client.Object, kubeClient client.Client, scheme *runtime.Scheme) error {
+	updatedIa := instrumentedAppFromOwner(owner)
 	err := controllerutil.SetControllerReference(owner, updatedIa, scheme)
 	if err != nil {
 		log.Logger.Error(err, "Failed to set controller reference")
@@ -103,6 +144,7 @@ func persistRuntimeResults(ctx context.Context, results []common.LanguageByConta
 
 	operationResult, err := controllerutil.CreateOrPatch(ctx, kubeClient, updatedIa, func() error {
 		updatedIa.Spec.Languages = results
+		updatedIa.Status.LastError = ""
 		return nil
 	})
 
