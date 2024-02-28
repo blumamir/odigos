@@ -154,3 +154,7 @@ TAG=<CURRENT-ODIGOS-VERSION> make debug-odiglet
 
 Then, you can attach a debugger to the Odiglet pod. For example, if you are using Goland, you can follow the instructions [here](https://www.jetbrains.com/help/go/attach-to-running-go-processes-with-debugger.html#step-3-create-the-remote-run-debug-configuration-on-the-client-computer) to attach to a remote process.
 For Visual Studio Code, you can use the `.vscode/launch.json` file in this repo to attach to the Odiglet pod.
+
+### Adding a New Odigos Action
+
+- Add the CRD (`x_types.go` file) under `api/odigos/actions` directory.
