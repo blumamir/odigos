@@ -1,0 +1,57 @@
+# Changelog
+
+## [1.1.0](https://github.com/blumamir/odigos/compare/v1.0.54...v1.1.0) (2024-04-11)
+
+
+### Features
+
+* add --short flag to version command ([#939](https://github.com/blumamir/odigos/issues/939)) ([fa9ad93](https://github.com/blumamir/odigos/commit/fa9ad93f28c8e0d5f87c77dab6d915be6c0f3081))
+* add --yes flag to uninstall command ([#733](https://github.com/blumamir/odigos/issues/733)) ([6d25774](https://github.com/blumamir/odigos/commit/6d2577465ce4a5d9bb46004f11083a612711b0b5))
+* add "cloud" command to odigos cli for login and logout ([#727](https://github.com/blumamir/odigos/issues/727)) ([73cecc4](https://github.com/blumamir/odigos/commit/73cecc49e11301f7d65a1507e90f21dd7b90f97c))
+* Add CLI flags for overwriting instrumentor and odiglet ([#469](https://github.com/blumamir/odigos/issues/469)) ([32d6057](https://github.com/blumamir/odigos/commit/32d605790d75e127eee87eebf36a7e7cda838386))
+* add memory limiter to gateway collector ([#1086](https://github.com/blumamir/odigos/issues/1086)) ([53591fc](https://github.com/blumamir/odigos/commit/53591fc3a2319325f4bf08f26da1c709e2a69297))
+* add odigos version resource attribute to own telemetry ([#671](https://github.com/blumamir/odigos/issues/671)) ([3319cab](https://github.com/blumamir/odigos/commit/3319cab6c2ea6034d3aa25ca073a1dd8602339a3))
+* add odigos-cloud proxy to cli install ([#463](https://github.com/blumamir/odigos/issues/463)) ([c3c4a51](https://github.com/blumamir/odigos/commit/c3c4a5138935fa02cac20e848b2fdf91e76ea9f4))
+* add own telemetry pipeline deployment ([#641](https://github.com/blumamir/odigos/issues/641)) ([7bfcf92](https://github.com/blumamir/odigos/commit/7bfcf92eb309afa0b23441cd505f5c6540263a8f))
+* allow adding extra reconcilers to odiglet ([#785](https://github.com/blumamir/odigos/issues/785)) ([2fb4fa8](https://github.com/blumamir/odigos/commit/2fb4fa8707ccaab3c3582181abdfcc3074848c5c))
+* **api:** instrumentation config crd ([#781](https://github.com/blumamir/odigos/issues/781)) ([10588c4](https://github.com/blumamir/odigos/commit/10588c4bdb4c7bba989b0b2615e5182104fb7b99))
+* **cli:** add "--yes" option to all commands with confirmation prompt ([#935](https://github.com/blumamir/odigos/issues/935)) ([f2136fa](https://github.com/blumamir/odigos/commit/f2136fabbf852d311146d36a3f2e81cd69728e2b))
+* **cli:** download new ui version if needed ([#932](https://github.com/blumamir/odigos/issues/932)) ([2ef57bd](https://github.com/blumamir/odigos/commit/2ef57bdab654e85a146b2bf984a9c46c3ba863ac))
+* **cli:** upgrade command to change image tags of odigos components  ([#683](https://github.com/blumamir/odigos/issues/683)) ([6a5779b](https://github.com/blumamir/odigos/commit/6a5779bdaf7bf8e919fb3d9d3781a3def6d23923))
+* configuring collector processors via crds ([#978](https://github.com/blumamir/odigos/issues/978)) ([4869bee](https://github.com/blumamir/odigos/commit/4869bee949d504ad95c60aa7f48fceee97037f4d))
+* frontend api for insertclusterattribute ([#1009](https://github.com/blumamir/odigos/issues/1009)) ([5fdd31d](https://github.com/blumamir/odigos/commit/5fdd31dcb8f3cccb0e35d729b061832a159518ab))
+* generic support for otel sdk types via crd ([#818](https://github.com/blumamir/odigos/issues/818)) ([461cdde](https://github.com/blumamir/odigos/commit/461cdde83ae2a4892a6a85a7521cc5a9df76320f))
+* implement rename action ([#1094](https://github.com/blumamir/odigos/issues/1094)) ([0bbc6a7](https://github.com/blumamir/odigos/commit/0bbc6a7259b34220359e4447535c0f49c320c82f))
+* make java ebpf default for on-prem ([#847](https://github.com/blumamir/odigos/issues/847)) ([83a2e41](https://github.com/blumamir/odigos/commit/83a2e41b4785201aba0fe8c4eab4004be4ed8742))
+* new action - delete attribute ([#1055](https://github.com/blumamir/odigos/issues/1055)) ([e12b524](https://github.com/blumamir/odigos/commit/e12b52431936dbae166c81c90ccbbfb1c793d337))
+* **odiglet:** support workloads for ebpf director ([#786](https://github.com/blumamir/odigos/issues/786)) ([431cbee](https://github.com/blumamir/odigos/commit/431cbee04af2e5b9a9fdd11995bd0a45fae48d25))
+* odigos action insert cluster attributes ([#1000](https://github.com/blumamir/odigos/issues/1000)) ([35da47b](https://github.com/blumamir/odigos/commit/35da47b13cd06de4c3958cdf6bd42394c6f7e60e))
+* odigos enterprise on-prem tier ([#825](https://github.com/blumamir/odigos/issues/825)) ([8d8cde4](https://github.com/blumamir/odigos/commit/8d8cde46e89cafa6859ebee566f411688fc2955c))
+* odigos migration framework ([#692](https://github.com/blumamir/odigos/issues/692)) ([3e0b3fd](https://github.com/blumamir/odigos/commit/3e0b3fd1c8cdcf451b548fab2f2976e569e253e7))
+* persist and print odigos version in cli ([#657](https://github.com/blumamir/odigos/issues/657)) ([6099857](https://github.com/blumamir/odigos/commit/609985701c758032f58a030b7ed35b765dfd61ce))
+* print a good message for cli version if odigos is not installed ([#739](https://github.com/blumamir/odigos/issues/739)) ([8acb372](https://github.com/blumamir/odigos/commit/8acb37289c68dd3dcd16f19d6b75c9047048da12))
+* setup odigos own telemetry logs pipeline for odigos cloud ([#637](https://github.com/blumamir/odigos/issues/637)) ([8d492a5](https://github.com/blumamir/odigos/commit/8d492a5a5146102ed641eece0f58852e8fd8cf7c))
+* use device manager for ebpf instrumentations ([#826](https://github.com/blumamir/odigos/issues/826)) ([fc3f417](https://github.com/blumamir/odigos/commit/fc3f41777cc42679ad9df60c25a9ba5db46875ce))
+* use odiglet enterprise image for odigos cloud installations ([#806](https://github.com/blumamir/odigos/issues/806)) ([14b7bf7](https://github.com/blumamir/odigos/commit/14b7bf72d367900a14968579551cc337fb30920a))
+
+
+### Bug Fixes
+
+* [#554](https://github.com/blumamir/odigos/issues/554) Add relevant texts to odigos cli help   ([#704](https://github.com/blumamir/odigos/issues/704)) ([217e708](https://github.com/blumamir/odigos/commit/217e708699772c4cf13f2ae6249b391b5e343910))
+* add patch rbac for cloud proxy ([#663](https://github.com/blumamir/odigos/issues/663)) ([c31ae98](https://github.com/blumamir/odigos/commit/c31ae9804bc49f1994cb248728912d660c33c204))
+* apply crds on upgrade ([#737](https://github.com/blumamir/odigos/issues/737)) ([732f2f7](https://github.com/blumamir/odigos/commit/732f2f72278309c08bbd8ca8d482450e7dfacc1e))
+* **cli:** initialize deployment manager ([#815](https://github.com/blumamir/odigos/issues/815)) ([c1ed39a](https://github.com/blumamir/odigos/commit/c1ed39ab98d11c4f06a8addfce7381020b046ef5))
+* **cli:** odigos upgrade in pro tier crash ([#871](https://github.com/blumamir/odigos/issues/871)) ([c73c04c](https://github.com/blumamir/odigos/commit/c73c04c8979a7f9591b781112609f1d58ad1373c))
+* configure filelog with only instrumented apps' logs ([#1080](https://github.com/blumamir/odigos/issues/1080)) ([89eb546](https://github.com/blumamir/odigos/commit/89eb5466740131b2f701b4f8fdbfe1e49cc3fba4))
+* Corrected console output log ([#629](https://github.com/blumamir/odigos/issues/629)) ([bf4cf97](https://github.com/blumamir/odigos/commit/bf4cf97e881e88b1376f7eeefe50166becfad9b7))
+* do not fail when unable to update ui binary ([#937](https://github.com/blumamir/odigos/issues/937)) ([d4dc5fe](https://github.com/blumamir/odigos/commit/d4dc5fef3f2f6a24ff79d25294fcbddef5b5ba8b))
+* exit if odigos is already installed ([#676](https://github.com/blumamir/odigos/issues/676)) ([e24d22d](https://github.com/blumamir/odigos/commit/e24d22d86babe45937cf98ca9a5c42a69287d34b))
+* **frontend:** correctly apply instrumentation label from ui ([#914](https://github.com/blumamir/odigos/issues/914)) ([5432bf0](https://github.com/blumamir/odigos/commit/5432bf02777327f87c81149f6b31ba5c7f303634))
+* handle old ui binaries which does not report version ([#933](https://github.com/blumamir/odigos/issues/933)) ([857ecf4](https://github.com/blumamir/odigos/commit/857ecf46aca5bda6be759da3e3dafa8043f0b82d))
+* include uncommited changes from [#825](https://github.com/blumamir/odigos/issues/825) ([#842](https://github.com/blumamir/odigos/issues/842)) ([e1e83c7](https://github.com/blumamir/odigos/commit/e1e83c7dad4a11c2d38b48f59c80ef226b69d687))
+* install namespace check ([#949](https://github.com/blumamir/odigos/issues/949)) ([1fceb27](https://github.com/blumamir/odigos/commit/1fceb27f1ffbe8f01661cebd49ff755fffb21570))
+* one failed daemonset pod prevents other from updating ([#1101](https://github.com/blumamir/odigos/issues/1101)) ([37987d1](https://github.com/blumamir/odigos/commit/37987d1f9849785519592d66ab7ab70a1dfeff65))
+* replace workload if the selector labels changed ([#931](https://github.com/blumamir/odigos/issues/931)) ([83a26b7](https://github.com/blumamir/odigos/commit/83a26b7d48983316070dd7e1835b9898ea255c85))
+* respect `KUBECONFIG` env var ([#1064](https://github.com/blumamir/odigos/issues/1064)) ([090ac7c](https://github.com/blumamir/odigos/commit/090ac7c5d48e5ebb74962e58f605f9c73b9d8ffc))
+* rollout odiglet on cloud token update ([#891](https://github.com/blumamir/odigos/issues/891)) ([3471438](https://github.com/blumamir/odigos/commit/347143809456e2a2469a34a7e4592c579288eeb6))
+* use patch in cli uninstall to prevent race conditions ([#1025](https://github.com/blumamir/odigos/issues/1025)) ([c6268e8](https://github.com/blumamir/odigos/commit/c6268e83989311bbb0c268876333254529200c98))
