@@ -36,17 +36,6 @@ const (
 	InstrumentationLibraryTypeExporter        InstrumentationLibraryType = "exporter"
 )
 
-// Attribute is a key-value pair that describes a component or instrumentation
-type Attribute struct {
-	// +required
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
-	Key string `json:"key"`
-	// +required
-	// +kubebuilder:validation:Required
-	Value string `json:"value"`
-}
-
 // InstrumentationLibraryStatus defines the observed state of an InstrumentationLibrary.
 // if a library is not active/disable, it should not be included in the status
 type InstrumentationLibraryStatus struct {

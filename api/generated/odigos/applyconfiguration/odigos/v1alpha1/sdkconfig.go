@@ -26,6 +26,8 @@ import (
 type SdkConfigApplyConfiguration struct {
 	Language                      *common.ProgrammingLanguage                      `json:"language,omitempty"`
 	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
+	ResourceAttributes            []AttributeApplyConfiguration                    `json:"resourceAttributes,omitempty"`
+	Traces                        *TraceSignalGeneralConfigApplyConfiguration      `json:"traces,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs an declarative configuration of the SdkConfig type for use with
@@ -52,5 +54,26 @@ func (b *SdkConfigApplyConfiguration) WithInstrumentationLibraryConfigs(values .
 		}
 		b.InstrumentationLibraryConfigs = append(b.InstrumentationLibraryConfigs, *values[i])
 	}
+	return b
+}
+
+// WithResourceAttributes adds the given value to the ResourceAttributes field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ResourceAttributes field.
+func (b *SdkConfigApplyConfiguration) WithResourceAttributes(values ...*AttributeApplyConfiguration) *SdkConfigApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithResourceAttributes")
+		}
+		b.ResourceAttributes = append(b.ResourceAttributes, *values[i])
+	}
+	return b
+}
+
+// WithTraces sets the Traces field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Traces field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithTraces(value *TraceSignalGeneralConfigApplyConfiguration) *SdkConfigApplyConfiguration {
+	b.Traces = value
 	return b
 }

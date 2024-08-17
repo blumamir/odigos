@@ -41,6 +41,15 @@ type SdkConfig struct {
 
 	// configurations for the instrumentation libraries the the SDK should use
 	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs"`
+
+	// ResourceAttributes is a list of attributes that should be added to the telemetry
+	// emitted from this SDK. These attributes are added to all spans, along with any other attributes
+	// that are detected regardless, like process.*, k8s.*, etc.
+	// if you want to control the `service.name` resource attribute value, pass it here.
+	ResourceAttributes []Attribute `json:"resourceAttributes"`
+
+	// general configuration for recording traces in the SDK level.
+	Traces TraceSignalGeneralConfig `json:"traces"`
 }
 
 type InstrumentationLibraryConfig struct {
@@ -57,6 +66,21 @@ type InstrumentationLibraryConfigTraces struct {
 	// When true, the instrumentation library should produce spans according to the other configuration options.
 	// If not specified, the default value for this signal should be used (whether to enable libraries by default or not).
 	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// general configuration in the SDK level for trace signal.
+type TraceSignalGeneralConfig struct {
+
+	// general flag to control if the sdk should produce traces or not.
+	// this can be used to globally disabled traces when the receiver is not setup to receive traces,
+	// if there is not destination for the traces.
+	Enabled bool `json:"enabled"`
+
+	// by using this value, one can choose the behavior for instrumentation libraries
+	// for which there is no explicit enabled configuration.
+	// simplest (black list) - one can set this value to true to allow all instrumentation libraries to produce traces, unless explicitly disabled.
+	// safest (white list)- by default all instrumentation libraries are disabled, unless explicitly enabled.
+	DefaultEnabledValue bool `json:"defaultEnabledValue"`
 }
 
 // WorkloadInstrumentationConfig defined a single config option to apply

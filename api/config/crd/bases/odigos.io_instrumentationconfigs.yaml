@@ -156,9 +156,54 @@ spec:
                       - unknown
                       - ignored
                       type: string
+                    resourceAttributes:
+                      description: |-
+                        ResourceAttributes is a list of attributes that should be added to the telemetry
+                        emitted from this SDK. These attributes are added to all spans, along with any other attributes
+                        that are detected regardless, like process.*, k8s.*, etc.
+                        if you want to control the `service.name` resource attribute value, pass it here.
+                      items:
+                        description: |-
+                          Attribute is a key-value pair that conforms to the OpenTelemetry attributes specification
+                          and semantic conventions.
+                          while opentelemetry attributes supports a wide range of types for attribute value, this struct only supports strings.
+                        properties:
+                          key:
+                            minLength: 1
+                            type: string
+                          value:
+                            type: string
+                        required:
+                        - key
+                        - value
+                        type: object
+                      type: array
+                    traces:
+                      description: general configuration for recording traces in the
+                        SDK level.
+                      properties:
+                        defaultEnabledValue:
+                          description: |-
+                            by using this value, one can choose the behavior for instrumentation libraries
+                            for which there is no explicit enabled configuration.
+                            simplest (black list) - one can set this value to true to allow all instrumentation libraries to produce traces, unless explicitly disabled.
+                            safest (white list)- by default all instrumentation libraries are disabled, unless explicitly enabled.
+                          type: boolean
+                        enabled:
+                          description: |-
+                            general flag to control if the sdk should produce traces or not.
+                            this can be used to globally disabled traces when the receiver is not setup to receive traces,
+                            if there is not destination for the traces.
+                          type: boolean
+                      required:
+                      - defaultEnabledValue
+                      - enabled
+                      type: object
                   required:
                   - instrumentationLibraryConfigs
                   - language
+                  - resourceAttributes
+                  - traces
                   type: object
                 type: array
             type: object
