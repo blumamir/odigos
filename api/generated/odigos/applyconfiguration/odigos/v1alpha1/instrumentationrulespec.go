@@ -32,6 +32,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	InstrumentationLibraries *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection        *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
 	OtelSdks                 *instrumentationrules.OtelSdks                      `json:"otelSdks,omitempty"`
+	IgnoredContainers        *instrumentationrules.IgnoredContainers             `json:"ignoredContainers,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -105,5 +106,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithPayloadCollection(value 
 // If called multiple times, the OtelSdks field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithOtelSdks(value instrumentationrules.OtelSdks) *InstrumentationRuleSpecApplyConfiguration {
 	b.OtelSdks = &value
+	return b
+}
+
+// WithIgnoredContainers sets the IgnoredContainers field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the IgnoredContainers field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithIgnoredContainers(value instrumentationrules.IgnoredContainers) *InstrumentationRuleSpecApplyConfiguration {
+	b.IgnoredContainers = &value
 	return b
 }

@@ -65,6 +65,9 @@ type InstrumentationRuleSpec struct {
 	// instrumentation libraries will be ignored if set.
 	// the rule will be used only for languages which are specified, and ignored otherwise.
 	OtelSdks *instrumentationrules.OtelSdks `json:"otelSdks,omitempty"`
+
+	// List of container names that should be excluded for auto instrumentation.
+	IgnoredContainers *instrumentationrules.IgnoredContainers `json:"ignoredContainers,omitempty"`
 }
 
 type InstrumentationRuleStatus struct {

@@ -17,12 +17,17 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
+)
+
 // InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
 	RuntimeDetailsInvalidated *bool                                             `json:"runtimeDetailsInvalidated,omitempty"`
 	Config                    []WorkloadInstrumentationConfigApplyConfiguration `json:"config,omitempty"`
 	SdkConfigs                []SdkConfigApplyConfiguration                     `json:"sdkConfigs,omitempty"`
+	IgnoredContainers         *instrumentationrules.IgnoredContainers           `json:"ignoredContainers,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -62,5 +67,13 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithSdkConfigs(values ...*
 		}
 		b.SdkConfigs = append(b.SdkConfigs, *values[i])
 	}
+	return b
+}
+
+// WithIgnoredContainers sets the IgnoredContainers field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the IgnoredContainers field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithIgnoredContainers(value instrumentationrules.IgnoredContainers) *InstrumentationConfigSpecApplyConfiguration {
+	b.IgnoredContainers = &value
 	return b
 }

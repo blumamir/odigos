@@ -21,6 +21,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	}
 
 	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ia.Spec.RuntimeDetails))
+	var ignoredContainers *instrumentationrules.IgnoredContainers = nil
 
 	// create an empty sdk config for each detected programming language
 	for _, container := range ia.Spec.RuntimeDetails {
@@ -41,6 +42,15 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		participating := utils.IsWorkloadParticipatingInRule(workload, rule)
 		if !participating {
 			continue
+		}
+
+		if rule.Spec.IgnoredContainers != nil {
+			if rule.Spec.InstrumentationLibraries == nil {
+				ignoredContainers = mergeIgnoredContainers(ignoredContainers, rule.Spec.IgnoredContainers)
+			} else {
+				// ignore containers cannot be set for instrumentation libraries (as the entire container is excluded)
+				// TODO: log this issue
+			}
 		}
 
 		for i := range sdkConfigs {
@@ -70,6 +80,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	}
 
 	ic.Spec.SdkConfigs = sdkConfigs
+	ic.Spec.IgnoredContainers = ignoredContainers
 
 	return nil
 }
@@ -232,6 +243,32 @@ func mergeMessagingPayloadCollectionRules(rule1 *instrumentationrules.MessagingP
 	} else {
 		mergedRules.DropPartialPayloads = boolPtr(*rule1.DropPartialPayloads || *rule2.DropPartialPayloads)
 	}
+
+	return &mergedRules
+}
+
+// merge the container names in each rule to get one list of container names to ignore
+func mergeIgnoredContainers(rule1 *instrumentationrules.IgnoredContainers, rule2 *instrumentationrules.IgnoredContainers) *instrumentationrules.IgnoredContainers {
+	if rule1 == nil {
+		return rule2
+	} else if rule2 == nil {
+		return rule1
+	}
+
+	mergedRules := instrumentationrules.IgnoredContainers{}
+
+	mergeContainerMap := make(map[string]struct{})
+	for _, containerName := range rule1.ContainerNames {
+		mergeContainerMap[containerName] = struct{}{}
+	}
+	for _, containerName := range rule2.ContainerNames {
+		mergeContainerMap[containerName] = struct{}{}
+	}
+	mergedContainerSlice := make([]string, 0, len(mergeContainerMap))
+	for container := range mergeContainerMap {
+		mergedContainerSlice = append(mergedContainerSlice, container)
+	}
+	mergedRules.ContainerNames = mergedContainerSlice
 
 	return &mergedRules
 }

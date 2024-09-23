@@ -46,6 +46,10 @@ type InstrumentationConfigSpec struct {
 	// The SDKs are identified by the programming language they are written in.
 	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
 	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
+
+	// Name of containers to exclude from auto instrumentation.
+	// Useful for sidecars which are auto injected into pods and are not part of the application.
+	IgnoredContainers *instrumentationrules.IgnoredContainers `json:"ignoredContainers,omitempty"`
 }
 
 type SdkConfig struct {

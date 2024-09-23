@@ -110,6 +110,18 @@ spec:
                   - optionKey
                   type: object
                 type: array
+              ignoredContainers:
+                description: |-
+                  Name of containers to exclude from auto instrumentation.
+                  Useful for sidecars which are auto injected into pods and are not part of the application.
+                properties:
+                  containerNames:
+                    items:
+                      type: string
+                    type: array
+                required:
+                - containerNames
+                type: object
               runtimeDetailsInvalidated:
                 description: true when the runtime details are invalidated and should
                   be recalculated

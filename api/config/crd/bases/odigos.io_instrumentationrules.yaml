@@ -44,6 +44,17 @@ spec:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
                 type: boolean
+              ignoredContainers:
+                description: List of container names that should be excluded for auto
+                  instrumentation.
+                properties:
+                  containerNames:
+                    items:
+                      type: string
+                    type: array
+                required:
+                - containerNames
+                type: object
               instrumentationLibraries:
                 description: |-
                   For fine grained control, the user can specify the instrumentation library to use.
