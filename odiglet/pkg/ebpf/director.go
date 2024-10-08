@@ -25,6 +25,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// this error should be returned when attempting to instrument a pid with eBPF,
+// and the instrumentation detected that the runtime is not supported.
+// for example: this is a golang instrumentation but the runtime is not go.
+var ErrUnsupportedRuntime = errors.New("unsupported runtime")
+
 // This interface should be implemented by all ebpf sdks
 // for example, the go auto instrumentation sdk implements it
 type OtelEbpfSdk interface {
@@ -321,6 +326,10 @@ func (d *EbpfDirector[T]) Instrument(ctx context.Context, pid int, pod types.Nam
 			defer loadedObserverCancel()
 			inst, err := d.instrumentationFactory.CreateEbpfInstrumentation(ctx, pid, appName, podWorkload, containerName, pod.Name, loadedIndicator)
 			if err != nil {
+				if err == ErrUnsupportedRuntime {
+					return
+				}
+
 				d.instrumentationStatusChan <- instrumentationStatus{
 					Healthy:       false,
 					Message:       err.Error(),

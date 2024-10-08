@@ -30,7 +30,7 @@ var _ goAutoConfig.Provider = (*ebpf.ConfigProvider[goAutoConfig.Instrumentation
 // compile-time check that GoOtelEbpfSdk implements ConfigurableOtelEbpfSdk
 var _ ebpf.ConfigurableOtelEbpfSdk = (*GoOtelEbpfSdk)(nil)
 
-type GoInstrumentationFactory struct{
+type GoInstrumentationFactory struct {
 	kubeclient client.Client
 }
 
@@ -76,6 +76,9 @@ func (g *GoInstrumentationFactory) CreateEbpfInstrumentation(ctx context.Context
 		auto.WithConfigProvider(cp),
 	)
 	if err != nil {
+		if err.Error() == "not a Go executable" {
+			return nil, ebpf.ErrUnsupportedRuntime
+		}
 		log.Logger.Error(err, "instrumentation setup failed")
 		return nil, err
 	}

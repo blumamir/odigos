@@ -141,3 +141,12 @@ func ValToAppend(envName string, sdk common.OtelSdk) (string, bool) {
 
 	return valToAppend, true
 }
+
+func GetEnvProgrammingLanguage(envName string) (common.ProgrammingLanguage, bool) {
+	env, exists := EnvValuesMap[envName]
+	if !exists {
+		return "", false
+	}
+
+	return env.programmingLanguage, true
+}

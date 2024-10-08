@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -20,6 +21,20 @@ var (
 	ErrPatchEnvVars = errors.New("failed to patch env vars")
 )
 
+// this function looks at the default sdks to determine the plugin name to use
+// when using the experimental feature to inject all languages instrumentations.
+// it can be improved later on to use a more direct way of determining the plugin name.
+func getAllLanguagesPluginName(defaultSdks map[common.ProgrammingLanguage]common.OtelSdk) common.OdigosInstrumentationDevice {
+
+	if defaultSdks[common.JavaProgrammingLanguage] == common.OtelSdkNativeEnterprise {
+		return common.OdigosInstrumentationPluginAllNativeEnterprise
+	} else if defaultSdks[common.JavaProgrammingLanguage] == common.OtelSdkEbpfEnterprise {
+		return common.OdigosInstrumentationPluginAllEbpfEnterprise
+	} else {
+		return common.OdigosInstrumentationPluginAllNativeCommunity
+	}
+}
+
 func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, runtimeDetails *odigosv1.InstrumentedApplication, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, targetObj client.Object) error {
 	// delete any existing instrumentation devices.
 	// this is necessary for example when migrating from community to enterprise,
@@ -31,13 +46,32 @@ func ApplyInstrumentationDevicesToPodTemplate(original *corev1.PodTemplateSpec, 
 		return err
 	}
 
+	// experimental annotation to inject instrumentations for all languages
+	_, allLanguages := targetObj.GetAnnotations()[consts.OdigosInstrumentAllLanguagesAnnotation]
+
 	var modifiedContainers []corev1.Container
 	for _, container := range original.Spec.Containers {
+
+		if allLanguages {
+			err := patchEnvVarsAllLanguages(runtimeDetails, &container, defaultSdks, manifestEnvOriginal)
+			if err != nil {
+				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
+			}
+			if container.Resources.Limits == nil {
+				container.Resources.Limits = make(map[corev1.ResourceName]resource.Quantity)
+			}
+			resourceName := getAllLanguagesPluginName(defaultSdks)
+			container.Resources.Limits[corev1.ResourceName(resourceName)] = resource.MustParse("1")
+
+			modifiedContainers = append(modifiedContainers, container)
+			continue
+		}
+
 		containerLanguage := getLanguageOfContainer(runtimeDetails, container.Name)
 		if containerLanguage == nil || *containerLanguage == common.UnknownProgrammingLanguage || *containerLanguage == common.IgnoredProgrammingLanguage || *containerLanguage == common.NginxProgrammingLanguage {
 			// always patch the env vars, even if the language is unknown or ignored.
 			// this is necessary to sync the existing envs with the missing language if changed for any reason.
-			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, *containerLanguage, manifestEnvOriginal)
+			err = patchEnvVarsForContainer(runtimeDetails, &container, nil, "", manifestEnvOriginal)
 			if err != nil {
 				return fmt.Errorf("%w: %v", ErrPatchEnvVars, err)
 			}
@@ -149,6 +183,93 @@ func getEnvVarsOfContainer(instrumentation *odigosv1.InstrumentedApplication, co
 	}
 
 	return envVars
+}
+
+// experimental feature to inject env vars for all languages
+func patchEnvVarsAllLanguages(runtimeDetails *odigosv1.InstrumentedApplication, container *corev1.Container, defaultSdks map[common.ProgrammingLanguage]common.OtelSdk, manifestEnvOriginal *envoverwrite.OrigWorkloadEnvValues) error {
+
+	observedEnvs := getEnvVarsOfContainer(runtimeDetails, container.Name)
+
+	// Step 1: check existing environment on the manifest and update them if needed
+	newEnvs := make([]corev1.EnvVar, 0, len(container.Env))
+	for _, envVar := range container.Env {
+
+		// extract the observed value for this env var, which might be empty if not currently exists
+		observedEnvValue := observedEnvs[envVar.Name]
+
+		// find the relevant sdk and programming for this env var
+		programmingLanguage, found := envOverwrite.GetEnvProgrammingLanguage(envVar.Name)
+		if !found {
+			// this env var is not of interest to odigos, so we will not modify it and keep it as is.
+			newEnvs = append(newEnvs, envVar)
+			continue
+		}
+		sdk, found := defaultSdks[programmingLanguage]
+		sdkPtr := &sdk
+		if !found {
+			sdkPtr = nil
+		}
+
+		desiredEnvValue := envOverwrite.GetPatchedEnvValue(envVar.Name, observedEnvValue, sdkPtr, programmingLanguage)
+
+		if desiredEnvValue == nil {
+			// no need to patch this env var, so make sure it is reverted to its original value
+			origValue, found := manifestEnvOriginal.RemoveOriginalValue(container.Name, envVar.Name)
+			if !found {
+				newEnvs = append(newEnvs, envVar)
+			} else { // found, we need to update the env var to it's original value
+				if origValue != nil {
+					// this case reverts back the env var to it's original value
+					newEnvs = append(newEnvs, corev1.EnvVar{
+						Name:  envVar.Name,
+						Value: *origValue,
+					})
+				} else {
+					// if the original value was nil, then it was not set by the user.
+					// we will simply not append it to the new envs to achieve the same effect.
+				}
+			}
+		} else { // there is a desired value to inject
+			// if it's the first time we patch this env var, save the original value
+			manifestEnvOriginal.InsertOriginalValue(container.Name, envVar.Name, &envVar.Value)
+			// update the env var to it's desired value
+			newEnvs = append(newEnvs, corev1.EnvVar{
+				Name:  envVar.Name,
+				Value: *desiredEnvValue,
+			})
+		}
+
+		// If an env var is defined both in the container build and in the container spec, the value in the container spec will be used.
+		delete(observedEnvs, envVar.Name)
+	}
+
+	// Step 2: add the new env vars which odigos might patch, but which are not defined in the manifest
+	for envName, envValue := range observedEnvs {
+		programmingLanguage, found := envOverwrite.GetEnvProgrammingLanguage(envName)
+		if !found {
+			continue
+		}
+		sdk, found := defaultSdks[programmingLanguage]
+		if !found {
+			// no default sdk for this language, so we can't patch this env var
+			continue
+		}
+		desiredEnvValue := envOverwrite.GetPatchedEnvValue(envName, envValue, &sdk, programmingLanguage)
+		if desiredEnvValue != nil {
+			// store that it was empty to begin with
+			manifestEnvOriginal.InsertOriginalValue(container.Name, envName, nil)
+			// and add this new env var to the manifest
+			newEnvs = append(newEnvs, corev1.EnvVar{
+				Name:  envName,
+				Value: *desiredEnvValue,
+			})
+		}
+	}
+
+	// Step 3: update the container with the new env vars
+	container.Env = newEnvs
+
+	return nil
 }
 
 // when otelsdk is nil, it means that the container is not instrumented.

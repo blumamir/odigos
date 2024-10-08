@@ -60,6 +60,9 @@ func NewLister(ctx context.Context, clientset *kubernetes.Clientset, otelSdksLsf
 		}
 	}
 
+	// hack to add plugins for experimental feature to apply instrumentations for all languages at once
+	// this should be improved if we choose to keep it
+
 	return &lister{
 		plugins: availablePlugins,
 	}, nil

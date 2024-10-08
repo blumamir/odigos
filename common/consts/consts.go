@@ -18,6 +18,11 @@ const (
 	OdigosReportedNameAnnotation  = "odigos.io/reported-name"
 	EbpfInstrumentationAnnotation = "instrumentation.odigos.io/ebpf" // deprecated.
 
+	// When this annotation is set on a workload object (deployment, daemonset, statefulset),
+	// odigos will ignore the runtime detection and will use a new, experimental method to
+	// inject all supported languages.
+	OdigosInstrumentAllLanguagesAnnotation = "odigos.io/experimental-instrument-all-languages"
+
 	// Used to store the original value of the environment variable in the pod manifest.
 	// This is used to restore the original value when an instrumentation is removed
 	// or odigos is uninstalled.

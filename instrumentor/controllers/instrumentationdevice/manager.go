@@ -3,6 +3,7 @@ package instrumentationdevice
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -67,6 +68,12 @@ func (w workloadPodTemplatePredicate) Update(e event.UpdateEvent) bool {
 		if prevNumOdigosResources != newNumOdigosResources {
 			return true
 		}
+	}
+
+	_, hadOdigosAnnotation := e.ObjectOld.GetAnnotations()[consts.OdigosInstrumentAllLanguagesAnnotation]
+	_, hasOdigosAnnotation := e.ObjectNew.GetAnnotations()[consts.OdigosInstrumentAllLanguagesAnnotation]
+	if hadOdigosAnnotation != hasOdigosAnnotation {
+		return true
 	}
 
 	return false
