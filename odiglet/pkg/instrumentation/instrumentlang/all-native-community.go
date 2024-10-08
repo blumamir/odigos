@@ -17,6 +17,7 @@ const (
 	envOpampServerHost          = "ODIGOS_OPAMP_SERVER_HOST"
 	envInstrumentationDeviceId  = "ODIGOS_INSTRUMENTATION_DEVICE_ID"
 	envOtelTracesSampler        = "OTEL_TRACES_SAMPLER"
+	envOtelResourceAttributes   = "OTEL_RESOURCE_ATTRIBUTES"
 )
 
 func AllNativeCommunity(deviceId string, uniqueDestinationSignals map[common.ObservabilitySignal]struct{}) *v1beta1.ContainerAllocateResponse {
@@ -56,7 +57,7 @@ func AllNativeCommunity(deviceId string, uniqueDestinationSignals map[common.Obs
 			envOtelLogsExporter:         "none", // Logs are collected by the node collector with the file receiver
 			envOtelTracesExporter:       tracesExporter,
 			envOtelMetricsExporter:      metricsExporter,
-			envOtelExporterOtlpProtocol: "grpc", // specific distros may override this in code
+			envOtelExporterOtlpProtocol: "http/protobuf",
 
 			// go - taken care of by eBPF, no need for envs
 

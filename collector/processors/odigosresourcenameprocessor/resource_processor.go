@@ -17,6 +17,7 @@ package odigosresourcenameprocessor // import "github.com/open-telemetry/opentel
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -36,45 +37,51 @@ type resourceProcessor struct {
 
 func (rp *resourceProcessor) processAttributes(ctx context.Context, logger *zap.Logger, attrs pcommon.Map) {
 	// Get resource name
-	_, replaceName := attrs.Get(odigosDeviceKey)
-	if replaceName {
-		resourceName, ok := attrs.Get(string(semconv.ServiceNameKey))
-		if !ok {
-			logger.Info("No resource name found, skipping")
-			return
-		}
-
-		resourceAttributes, err := rp.nameResolver.Resolve(resourceName.AsString())
-		if err != nil {
-			logger.Error("Could not resolve pod name", zap.Error(err))
-			return
-		}
-
-		// Replace service name
-		resourceName.SetStr(resourceAttributes.OtelServiceName)
-
-		// add k8s resource attributes
-		if resourceAttributes.Namespace != "" {
-			attrs.PutStr(string(semconv.K8SNamespaceNameKey), resourceAttributes.Namespace)
-		}
-		if resourceAttributes.WorkloadName != "" {
-			switch resourceAttributes.WorkloadKind {
-			case "Deployment":
-				attrs.PutStr(string(semconv.K8SDeploymentNameKey), resourceAttributes.WorkloadName)
-			case "StatefulSet":
-				attrs.PutStr(string(semconv.K8SStatefulSetNameKey), resourceAttributes.WorkloadName)
-			case "DaemonSet":
-				attrs.PutStr(string(semconv.K8SDaemonSetNameKey), resourceAttributes.WorkloadName)
-			}
-		}
-		if resourceAttributes.PodName != "" {
-			attrs.PutStr(string(semconv.K8SPodNameKey), resourceAttributes.PodName)
-		}
-		if resourceAttributes.ContainerName != "" {
-			attrs.PutStr(string(semconv.ContainerNameKey), resourceAttributes.ContainerName)
-		}
+	serviceNameAttribute, ok := attrs.Get(string(semconv.ServiceNameKey))
+	if !ok {
+		logger.Info("No service name found, skipping")
 		return
 	}
+
+	serviceName := serviceNameAttribute.AsString()
+
+	_, err := uuid.Parse(serviceName)
+	if err != nil {
+		// if the service name is not a UUID, it is not a device id
+		// thus we don't need to do anything and can skip this processor
+		return
+	}
+
+	resourceAttributes, err := rp.nameResolver.Resolve(serviceName)
+	if err != nil {
+		logger.Error("Could not resolve pod name", zap.Error(err))
+		return
+	}
+
+	// Replace service name
+	serviceNameAttribute.SetStr(resourceAttributes.OtelServiceName)
+
+	// add k8s resource attributes
+	if resourceAttributes.Namespace != "" {
+		attrs.PutStr(string(semconv.K8SNamespaceNameKey), resourceAttributes.Namespace)
+	}
+	if resourceAttributes.WorkloadName != "" {
+		switch resourceAttributes.WorkloadKind {
+		case "Deployment":
+			attrs.PutStr(string(semconv.K8SDeploymentNameKey), resourceAttributes.WorkloadName)
+		case "StatefulSet":
+			attrs.PutStr(string(semconv.K8SStatefulSetNameKey), resourceAttributes.WorkloadName)
+		case "DaemonSet":
+			attrs.PutStr(string(semconv.K8SDaemonSetNameKey), resourceAttributes.WorkloadName)
+		}
+	}
+	if resourceAttributes.PodName != "" {
+		attrs.PutStr(string(semconv.K8SPodNameKey), resourceAttributes.PodName)
+	}
+	if resourceAttributes.ContainerName != "" {
+		attrs.PutStr(string(semconv.ContainerNameKey), resourceAttributes.ContainerName)
+	}
+	return
 }
 
 func (rp *resourceProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
