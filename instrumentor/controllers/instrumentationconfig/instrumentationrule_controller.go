@@ -33,6 +33,10 @@ func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.
 	}
 
 	for _, ia := range instrumentedApplications.Items {
+
+		// TODO: currently this loop is using the instrumentated application from the list.
+		// it the iteration takes time, and the loop is using stale data that has already been updated,
+		// it might revert the object and reconcile it to it's previous state.
 		ic := &odigosv1alpha1.InstrumentationConfig{}
 		err = r.Client.Get(ctx, client.ObjectKey{Name: ia.Name, Namespace: ia.Namespace}, ic)
 		if err != nil {
