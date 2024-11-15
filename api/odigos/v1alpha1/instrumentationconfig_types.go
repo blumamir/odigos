@@ -37,6 +37,13 @@ type InstrumentationConfigSpec struct {
 	// true when the runtime details are invalidated and should be recalculated
 	RuntimeDetailsInvalidated bool `json:"runtimeDetailsInvalidated,omitempty"`
 
+	// enabled signals contains a list of signals that are enabled for this workload.
+	// It can be used to quickly check and filter workloads when reconciling for just one specific signal.
+	// Can also be used for decision making based on the signals that are enabled.
+	// The 3 signals can all be disabled, and consumers should be aware of this case and handle it.
+	// This list can change at any time, and consumers should reconcile and re-evaluate the workload when they change.
+	EnabledSignals []common.ObservabilitySignal `json:"receiverSignals,omitempty"`
+
 	// config for this workload.
 	// the config is a list to allow for multiple config options and values to be applied.
 	// the list is processed in order, and the first matching config is applied.
