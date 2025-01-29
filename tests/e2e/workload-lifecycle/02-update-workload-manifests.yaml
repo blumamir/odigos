@@ -5,6 +5,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-unsupported-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -30,6 +31,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-very-old-version
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -55,6 +57,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-minimum-version
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: nodejs-minimum-version-reported
 spec:
@@ -82,6 +85,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-latest-version
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: nodejs-latest-version-reported
 spec:
@@ -109,6 +113,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-dockerfile-env
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: nodejs-dockerfile-env-reported
 spec:
@@ -136,6 +141,7 @@ metadata:
   namespace: default
   labels:
     app: nodejs-manifest-env
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: nodejs-manifest-env-reported
 spec:
@@ -166,6 +172,7 @@ metadata:
   namespace: default
   labels:
     app: cpp-http-server
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -191,6 +198,7 @@ metadata:
   namespace: default
   labels:
     app: java-supported-version
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: java-supported-version-reported
 spec:
@@ -222,6 +230,7 @@ metadata:
   namespace: default
   labels:
     app: java-azul
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: java-azul-reported
 spec:
@@ -253,6 +262,7 @@ metadata:
   namespace: default
   labels:
     app: java-supported-docker-env
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: java-supported-docker-env-reported
 spec:
@@ -285,6 +295,7 @@ metadata:
   namespace: default
   labels:
     app: java-supported-manifest-env
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: java-supported-manifest-env-reported
 spec:
@@ -317,6 +328,7 @@ metadata:
   namespace: default
   labels:
     app: java-latest-version
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: java-latest-version-reported
 spec:
@@ -349,6 +361,7 @@ metadata:
   namespace: default
   labels:
     app: java-old-version
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: java-old-version-reported
 spec:
@@ -380,6 +393,7 @@ metadata:
   namespace: default
   labels:
     app: python-latest-version
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: python-latest-version-reported
 spec:
@@ -419,6 +433,7 @@ metadata:
   namespace: default
   labels:
     app: python-alpine
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: python-alpine-reported
 spec:
@@ -458,6 +473,7 @@ metadata:
   namespace: default
   labels:
     app: python-not-supported
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: python-not-supported-reported
 spec:
@@ -497,6 +513,7 @@ metadata:
   namespace: default
   labels:
     app: python-min-version
+    odigos.io/e2e: test-workload
   annotations:
     odigos.io/reported-name: python-min-version-reported
 spec:
@@ -536,6 +553,7 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-musl
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -564,6 +582,7 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-musl
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -592,6 +611,7 @@ metadata:
   namespace: default
   labels:
     app: dotnet8-glibc
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
@@ -620,6 +640,7 @@ metadata:
   namespace: default
   labels:
     app: dotnet6-glibc
+    odigos.io/e2e: test-workload
 spec:
   selector:
     matchLabels:
