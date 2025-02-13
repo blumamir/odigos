@@ -31,6 +31,8 @@ const (
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
+	// reports if all pods are injected with the up-to-date agent deployment (meta hash matches the spec hash).
+	UpdatedPodsStatusConditionType = "UpdatedPods"
 )
 
 func StatusConditionTypeLogicalOrder(condType string) int {
@@ -43,8 +45,10 @@ func StatusConditionTypeLogicalOrder(condType string) int {
 		return 3
 	case WorkloadRolloutStatusConditionType:
 		return 4
-	default:
+	case UpdatedPodsStatusConditionType:
 		return 5
+	default:
+		return 6
 	}
 }
 
@@ -108,6 +112,14 @@ const (
 	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+)
+
+type UpdatedPodsReason string
+
+const (
+	UpdatedPodsReasonNoUpdatedPods           UpdatedPodsReason = "NoUpdatedPods"
+	UpdatedPodsReasonNewPodsCreated          UpdatedPodsReason = "NewPodsCreated"
+	UpdatedPodsReasonPodsUpdatedSuccessfully UpdatedPodsReason = "PodsUpdatedSuccessfully"
 )
 
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.

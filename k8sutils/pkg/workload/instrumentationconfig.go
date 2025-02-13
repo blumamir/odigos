@@ -7,15 +7,13 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
-// this file contains utils related to odigos workload runtime object names.
-// the format is <workload-kind>-<workload-name>
-// where the workload kind is lower case string (deployment, daemonset, statefulset)
-// and then a hyphen and the workload name
-// example: deployment-myapp
-
 func CalculateWorkloadRuntimeObjectName[T string | k8sconsts.WorkloadKind | k8sconsts.WorkloadKindLowerCase](
 	workloadName string, workloadKind T) string {
 	return strings.ToLower(string(workloadKind) + "-" + workloadName)
+}
+
+func InstrumentationConfigNameFromPodWorkload(pw k8sconsts.PodWorkload) string {
+	return CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 }
 
 func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloadName string, workloadKind k8sconsts.WorkloadKind, err error) {
@@ -36,4 +34,19 @@ func ExtractWorkloadInfoFromRuntimeObjectName(runtimeObjectName string) (workloa
 	workloadName = parts[1]
 
 	return
+}
+
+func PodWorkloadFromInstrumentationConfigName(icName string, ns string) (k8sconsts.PodWorkload, error) {
+	workloadName, workloadKind, err := ExtractWorkloadInfoFromRuntimeObjectName(icName)
+	if err != nil {
+		return k8sconsts.PodWorkload{}, err
+	}
+
+	pw := k8sconsts.PodWorkload{
+		Kind:      workloadKind,
+		Name:      workloadName,
+		Namespace: ns,
+	}
+
+	return pw, nil
 }

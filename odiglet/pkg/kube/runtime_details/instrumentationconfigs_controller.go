@@ -84,7 +84,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		if pod.DeletionTimestamp != nil || !k8scontainer.AllContainersReady(&pod) {
 			continue
 		}
-		podWorkload, err := getPodWorkloadObject(&pod)
+		podWorkload, err := workload.PodWorkloadFromPodObject(&pod)
 		if errors.Is(err, workload.ErrKindNotSupported) {
 			continue
 		}

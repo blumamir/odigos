@@ -1,16 +1,20 @@
-package runtime_details
+package workload
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func getPodWorkloadObject(pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
+func PodWorkloadFromPodObject(pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
+
 	for _, owner := range pod.OwnerReferences {
-		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
+
+		workloadName, workloadKind, err := GetWorkloadFromOwnerReference(owner)
+		if IsErrorKindNotSupported(err) {
+			continue
+		}
 		if err != nil {
-			return nil, workload.IgnoreErrorKindNotSupported(err)
+			return nil, err
 		}
 
 		return &k8sconsts.PodWorkload{
@@ -21,5 +25,5 @@ func getPodWorkloadObject(pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
 	}
 
 	// Pod does not necessarily have to be managed by a controller
-	return nil, nil
+	return nil, ErrKindNotSupported
 }

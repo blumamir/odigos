@@ -9,12 +9,14 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Workload interface {
 	client.Object
+	GetPodsSelector() *metav1.LabelSelector
 	AvailableReplicas() int32
 }
 
@@ -27,6 +29,10 @@ type DeploymentWorkload struct {
 	*v1.Deployment
 }
 
+func (d *DeploymentWorkload) GetPodsSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
+}
+
 func (d *DeploymentWorkload) AvailableReplicas() int32 {
 	return d.Status.AvailableReplicas
 }
@@ -35,12 +41,20 @@ type DaemonSetWorkload struct {
 	*v1.DaemonSet
 }
 
+func (d *DaemonSetWorkload) GetPodsSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
+}
+
 func (d *DaemonSetWorkload) AvailableReplicas() int32 {
 	return d.Status.NumberReady
 }
 
 type StatefulSetWorkload struct {
 	*v1.StatefulSet
+}
+
+func (s *StatefulSetWorkload) GetPodsSelector() *metav1.LabelSelector {
+	return s.Spec.Selector
 }
 
 func (s *StatefulSetWorkload) AvailableReplicas() int32 {
