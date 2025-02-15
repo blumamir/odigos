@@ -2,6 +2,7 @@ package agentenabled
 
 import (
 	"context"
+	"slices"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -66,7 +67,7 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 			continue
 		}
 
-		if ir.Spec.OtelSdks == nil {
+		if ir.Spec.OtelSdks == nil && ir.Spec.OtelDistros == nil {
 			// we only care about otel sdks rules at the moment.
 			// no need to process other rules.
 			continue
@@ -75,6 +76,28 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 		relevantIr = append(relevantIr, *ir)
 	}
 
+	// sort the instrumentation rules to apply them at deterministic order
+	// and to have more relevant rules applied last.
+	// this insures rules from profiles are applied first, so they can be overridden by more specific rules.
+	// TODO: this assumes we have very few rules (expecting few rules at most and no more than 10).
+	// if in the future we have many rules, we should consider a more efficient sorting algorithm.
+	slices.SortFunc(relevantIr, func(ir1, ir2 odigosv1.InstrumentationRule) int {
+
+		mb1 := ir1.Labels[k8sconsts.OdigosProfilesManagedByLabel]
+		mb2 := ir2.Labels[k8sconsts.OdigosProfilesManagedByLabel]
+
+		ir1FromProfile := mb1 == k8sconsts.OdigosProfilesManagedByValue
+		ir2FromProfile := mb2 == k8sconsts.OdigosProfilesManagedByValue
+
+		if ir1FromProfile && !ir2FromProfile {
+			return -1
+		} else if !ir1FromProfile && ir2FromProfile {
+			return 1
+		} else {
+			// if both are from profile or both are not from profile, sort by creation timestamp
+			return ir1.CreationTimestamp.Compare(ir2.CreationTimestamp.Time)
+		}
+	})
+
 	return &relevantIr, nil
 }
-
