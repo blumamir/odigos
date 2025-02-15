@@ -117,9 +117,9 @@ const (
 type UpdatedPodsReason string
 
 const (
-	UpdatedPodsReasonNoUpdatedPods           UpdatedPodsReason = "NoUpdatedPods"
-	UpdatedPodsReasonNewPodsCreated          UpdatedPodsReason = "NewPodsCreated"
-	UpdatedPodsReasonPodsUpdatedSuccessfully UpdatedPodsReason = "PodsUpdatedSuccessfully"
+	UpdatedPodsReasonNoUpdatedPods     UpdatedPodsReason = "NoUpdatedPods"
+	UpdatedPodsReasonNewPodsCreated    UpdatedPodsReason = "NewPodsCreated"
+	UpdatedPodsReasonPodsUpToDateReady UpdatedPodsReason = "PodsUpToDateReady"
 )
 
 // givin multiple reasons for not injecting an agent, this function returns the priority of the reason.

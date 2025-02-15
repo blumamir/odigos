@@ -28,6 +28,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/startlangdetection"
+	"github.com/odigos-io/odigos/instrumentor/controllers/updatedpods"
 	"github.com/odigos-io/odigos/instrumentor/controllers/workloadmigrations"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
@@ -49,9 +50,9 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
+	"github.com/odigos-io/odigos/instrumentor"
 	"github.com/odigos-io/odigos/instrumentor/controllers/deleteinstrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/report"
-	"github.com/odigos-io/odigos/instrumentor"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -257,6 +258,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = updatedpods.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller for updated pods")
+		os.Exit(1)
+	}
+
 	err = builder.
 		WebhookManagedBy(mgr).
 		For(&odigosv1.Source{}).
@@ -298,7 +305,7 @@ func addHealthAndReadyChecks(mgr ctrl.Manager) error {
 		return fmt.Errorf("unable to set up health check: %w", err)
 	}
 
-	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error{
+	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error {
 		return mgr.GetWebhookServer().StartedChecker()(req)
 	}); err != nil {
 		return fmt.Errorf("unable to set up ready check: %w", err)

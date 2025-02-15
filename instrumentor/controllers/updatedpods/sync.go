@@ -2,11 +2,14 @@ package updatedpods
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -108,6 +111,27 @@ func reconcileWorkload(ctx context.Context, c client.Client, pw k8sconsts.PodWor
 			updatedReadyPods++
 		} else {
 			instrumentedNotUpToDatePods++
+		}
+	}
+
+	reason := "FooBar"
+	message := "foo bar"
+	if instrumentedNotUpToDatePods == 0 {
+		reason = string(odigosv1.UpdatedPodsReasonPodsUpToDateReady)
+		message = fmt.Sprintf("All %d pods are up to date and ready", updatedReadyPods)
+	}
+
+	cond := metav1.Condition{
+		Type:    odigosv1.UpdatedPodsStatusConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  reason,
+		Message: message,
+	}
+	changed := meta.SetStatusCondition(&ic.Status.Conditions, cond)
+	if changed {
+		err = c.Status().Update(ctx, &ic)
+		if err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 
