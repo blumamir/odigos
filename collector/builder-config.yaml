@@ -87,6 +87,7 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.121.0
   - gomod: github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor v0.121.0
   - gomod: github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.121.0
+  - gomod: github.com/odigos-io/odigos/collector/processor/odigosservicenameprocessor v0.121.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.121.0
@@ -123,4 +124,7 @@ replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
   - github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor => ../processors/odigossourcesfilterprocessor
   - github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
+  - github.com/odigos-io/odigos/collector/processor/odigosservicenameprocessor => ../processors/odigosservicenameprocessor
   - go.opentelemetry.io/collector/odigos/providers/odigosfileprovider => ../providers/odigosfileprovider
+  - github.com/odigos-io/odigos/api => ../../api
+  - github.com/odigos-io/odigos/common => ../../common

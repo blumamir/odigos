@@ -1,0 +1,8 @@
+type: odigosservicename
+status:
+  class: processor
+  stability:
+    alpha: [logs]
+  distributions: [odigos]
+  codeowners:
+    active: [blumamir]
