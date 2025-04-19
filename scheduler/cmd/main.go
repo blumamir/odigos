@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
+	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,6 +62,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
+	utilruntime.Must(apiactions.AddToScheme(scheme)) // temporary until actions are migrated to odigosv1 api group under unified single action CRD
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -114,6 +116,9 @@ func main() {
 					Field: nsSelector,
 				},
 				&corev1.Secret{}: {
+					Field: nsSelector,
+				},
+				&apiactions.K8sAttributesResolver{}: {
 					Field: nsSelector,
 				},
 			},

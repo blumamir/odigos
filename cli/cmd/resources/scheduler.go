@@ -102,11 +102,11 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 				Resources: []string{"secrets"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			// { // needed to auto-create logs actions
-			// 	APIGroups: []string{"actions.odigos.io"},
-			// 	Resources: []string{"k8sattributesresolvers"},
-			// 	Verbs:     []string{"get", "list", "watch", "patch", "delete"},
-			// },
+			{ // needed to auto-create logs actions
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"k8sattributesresolvers"},
+				Verbs:     []string{"get", "list", "watch", "patch", "delete"},
+			},
 		},
 	}
 }

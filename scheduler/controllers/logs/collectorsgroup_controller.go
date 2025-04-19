@@ -34,8 +34,8 @@ func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 		k8sAttributesAction := &actionv1.K8sAttributesResolver{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "K8sAttributesAction",
-				APIVersion: "odigos.io/v1alpha1",
+				Kind:       "K8sAttributesResolver",
+				APIVersion: "actions.odigos.io",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      K8sAttributesActionName,
