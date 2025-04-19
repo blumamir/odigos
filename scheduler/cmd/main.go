@@ -46,6 +46,7 @@ import (
 
 	"github.com/odigos-io/odigos/scheduler/clusterinfo"
 	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
+	"github.com/odigos-io/odigos/scheduler/controllers/logs"
 	"github.com/odigos-io/odigos/scheduler/controllers/nodecollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfig"
 	"github.com/odigos-io/odigos/scheduler/controllers/odigospro"
@@ -161,6 +162,11 @@ func main() {
 	err = odigospro.SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller for odigos pro")
+		os.Exit(1)
+	}
+	err = logs.SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller for logs")
 		os.Exit(1)
 	}
 
