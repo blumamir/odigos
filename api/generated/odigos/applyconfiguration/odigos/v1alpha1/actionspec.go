@@ -25,14 +25,15 @@ import (
 // ActionSpecApplyConfiguration represents a declarative configuration of the ActionSpec type for use
 // with apply.
 type ActionSpecApplyConfiguration struct {
-	ActionName      *string                                `json:"actionName,omitempty"`
-	Notes           *string                                `json:"notes,omitempty"`
-	Disabled        *bool                                  `json:"disabled,omitempty"`
-	Signals         []common.ObservabilitySignal           `json:"signals,omitempty"`
-	AddClusterInfo  *actionsv1alpha1.AddClusterInfoConfig  `json:"addClusterInfo,omitempty"`
-	DeleteAttribute *actionsv1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
-	RenameAttribute *actionsv1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
-	PiiMasking      *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
+	ActionName            *string                                      `json:"actionName,omitempty"`
+	Notes                 *string                                      `json:"notes,omitempty"`
+	Disabled              *bool                                        `json:"disabled,omitempty"`
+	Signals               []common.ObservabilitySignal                 `json:"signals,omitempty"`
+	AddClusterInfo        *actionsv1alpha1.AddClusterInfoConfig        `json:"addClusterInfo,omitempty"`
+	DeleteAttribute       *actionsv1alpha1.DeleteAttributeConfig       `json:"deleteAttribute,omitempty"`
+	RenameAttribute       *actionsv1alpha1.RenameAttributeConfig       `json:"renameAttribute,omitempty"`
+	PiiMasking            *actionsv1alpha1.PiiMaskingConfig            `json:"piiMasking,omitempty"`
+	K8sAttributesResolver *actionsv1alpha1.K8sAttributesResolverConfig `json:"k8sAttributesResolver,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -104,5 +105,13 @@ func (b *ActionSpecApplyConfiguration) WithRenameAttribute(value actionsv1alpha1
 // If called multiple times, the PiiMasking field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithPiiMasking(value actionsv1alpha1.PiiMaskingConfig) *ActionSpecApplyConfiguration {
 	b.PiiMasking = &value
+	return b
+}
+
+// WithK8sAttributesResolver sets the K8sAttributesResolver field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the K8sAttributesResolver field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithK8sAttributesResolver(value actionsv1alpha1.K8sAttributesResolverConfig) *ActionSpecApplyConfiguration {
+	b.K8sAttributesResolver = &value
 	return b
 }

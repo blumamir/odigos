@@ -56,17 +56,11 @@ type ActionSpec struct {
 	// Which signals should this action operate on.
 	Signals []common.ObservabilitySignal `json:"signals"`
 
-	// AddClusterInfo is the config for the AddClusterInfo Action.
-	AddClusterInfo *actionsv1.AddClusterInfoConfig `json:"addClusterInfo,omitempty"`
-
-	// DeleteAttribute is the config for the DeleteAttribute Action.
-	DeleteAttribute *actionsv1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
-
-	// RenameAttribute is the config for the RenameAttribute Action.
-	RenameAttribute *actionsv1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
-
-	// PiiMasking is the config for the PiiMasking Action.
-	PiiMasking *actionsv1.PiiMaskingConfig `json:"piiMasking,omitempty"`
+	AddClusterInfo        *actionsv1.AddClusterInfoConfig        `json:"addClusterInfo,omitempty"`
+	DeleteAttribute       *actionsv1.DeleteAttributeConfig       `json:"deleteAttribute,omitempty"`
+	RenameAttribute       *actionsv1.RenameAttributeConfig       `json:"renameAttribute,omitempty"`
+	PiiMasking            *actionsv1.PiiMaskingConfig            `json:"piiMasking,omitempty"`
+	K8sAttributesResolver *actionsv1.K8sAttributesResolverConfig `json:"k8sAttributesResolver,omitempty"`
 }
 
 type ActionStatus struct {
