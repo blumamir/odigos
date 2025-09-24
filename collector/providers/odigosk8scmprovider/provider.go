@@ -70,6 +70,18 @@ func (p *provider) waitForConfigMap(ctx context.Context) (*corev1.ConfigMap, err
 }
 
 func (p *provider) Retrieve(ctx context.Context, uri string, wf confmap.WatcherFunc) (*confmap.Retrieved, error) {
+
+	// if the source config map is changed frequently, it results in the collector being restarted,
+	// many times which is not ideal.
+	// both the writter (controller) should avoid frequent changes to the config map,
+	// and the provider (here) also applies some protection by waiting for a while before retrieving the config map.
+	// so if it changes 15 times over 15 seconds, we will have just one restart instead of 15 restarts.
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-time.After(15 * time.Second):
+	}
+
 	// Parse URI: k8scm:namespace/name/key
 	if !strings.HasPrefix(uri, schemeName+":") {
 		return nil, fmt.Errorf("%q uri is not supported by %q provider", uri, schemeName)
