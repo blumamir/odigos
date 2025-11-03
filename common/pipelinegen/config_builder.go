@@ -309,6 +309,7 @@ func GetBasicConfig() *config.Config {
 			consts.GenericBatchProcessorConfigKey: config.GenericMap{},
 		},
 		Extensions: config.GenericMap{
+			"memory_info": config.GenericMap{},
 			"health_check": config.GenericMap{
 				"endpoint": "0.0.0.0:13133",
 			},
@@ -319,7 +320,7 @@ func GetBasicConfig() *config.Config {
 		Exporters: map[string]interface{}{},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "pprof"},
+			Extensions: []string{"health_check", "pprof", "memory_info"},
 		},
 	}
 }

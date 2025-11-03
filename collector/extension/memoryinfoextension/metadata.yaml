@@ -1,0 +1,9 @@
+type: memory_info
+github_project: odigos-io/odigos
+
+status:
+  class: extension
+  stability:
+    development: [extension]
+  codeowners:
+    active: [blumamir]

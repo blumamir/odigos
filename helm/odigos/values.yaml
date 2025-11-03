@@ -138,6 +138,17 @@ collectorGateway:
   # when unset or empty, no proxy will be used.
   # httpsProxyAddress: ''
 
+  # uncomment and use memoryDiagnostics when trouble shooting memory issues in collector gateway.
+  # this option will print additional memory info into the collector logs,
+  # at set intervals, and is an advanced feature to use only when OutOfMemory issues are encountered.
+  memoryDiagnostics:
+    enabled: true
+    # interval is how often to log memory diagnostics info to the collector logs.
+    # use lower duration for more frequent logs (aids in troubleshooting, but more chatty and noisy).
+    # use higher duration to reduce noise and log less frequently.
+    # default is 100ms.
+    interval: 100ms
+
 # Settings for Odigos data-collection (node) Collectors
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.

@@ -253,6 +253,22 @@ spec:
                     type: integer
                   maxReplicas:
                     type: integer
+                  memoryDiagnostics:
+                    description: set if the user is requesting additional memory diagnostics
+                      to be printed to the logs.
+                    properties:
+                      enabled:
+                        description: |-
+                          memory diagnostics is disabled by default.
+                          set to "true" to enable it.
+                        type: boolean
+                      interval:
+                        description: |-
+                          how often to report memory diagnostics.
+                          format: duration string (100ms, 2s, etc).
+                          default is 100ms.
+                        type: string
+                    type: object
                   memoryLimitMiB:
                     description: |-
                       This option sets the limit on the memory usage of the collector.

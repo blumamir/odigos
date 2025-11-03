@@ -80,6 +80,18 @@ type RetryOnFailure struct {
 	MaxElapsedTime  string `json:"maxElapsedTime,omitempty"`
 }
 
+type MemoryDiagnosticsConfiguration struct {
+
+	// memory diagnostics is disabled by default.
+	// set to "true" to enable it.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// how often to report memory diagnostics.
+	// format: duration string (100ms, 2s, etc).
+	// default is 100ms.
+	Interval string `json:"interval,omitempty"`
+}
+
 type CollectorGatewayConfiguration struct {
 	// MinReplicas is the number of replicas for the cluster gateway collector deployment.
 	// Also set the minReplicas for the HPA to this value.
@@ -135,6 +147,13 @@ type CollectorGatewayConfiguration struct {
 
 	// for destinations that uses https for exporting data, this value can be used to set the value for the https proxy.
 	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
+
+	// print additional memory diagnostics to the logs.
+	// advanced feature to troubleshoot memory issues.
+	// disabled by default (enable it only when needed).
+	// it is recommended to use the memory diagnostics only when troubleshooting memory issues,
+	// and remove/disable it after the issue is resolved.
+	MemoryDiagnostics *MemoryDiagnosticsConfiguration `json:"memoryDiagnostics,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`

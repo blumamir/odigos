@@ -61,6 +61,11 @@ data:
       {{- with .Values.collectorGateway.httpsProxyAddress }}
       httpsProxyAddress: {{ . }}
       {{- end }}
+      {{- if .Values.collectorGateway.memoryDiagnostics }}
+      memoryDiagnostics:
+        enabled: {{ .Values.collectorGateway.memoryDiagnostics.enabled }}
+        interval: {{ .Values.collectorGateway.memoryDiagnostics.interval }}
+      {{- end }}
     {{- end }}
     {{- if .Values.collectorNode }}
     {{- $nodeLimiter := include "collector.node.memoryLimiter" . | fromYaml }}
