@@ -84,12 +84,18 @@ func (m *MemoryInfo) emitMemoryInfo() {
 	if delayIsProblematic {
 		m.logger.Warn("memory diagnostic reported with noticeable delay, CPU might be throttled", zap.String("loop interval", m.loopInterval.String()), zap.String("lastReportDelay", lastReportDelay.String()), zap.String("timeSinceLastReport", timeSinceLastReport.String()))
 	}
+	m.lastReportTime = time.Now()
 
-	stats := rtml.GetMemLimitRelatedStats()
 	isMemoryLimitReached := rtml.IsMemLimitReached()
+	m.LogMemoryInfo("periodic interval", isMemoryLimitReached)
+}
+
+func (m *MemoryInfo) LogMemoryInfo(scope string, memoryLimitReached bool) {
+	stats := rtml.GetMemLimitRelatedStats()
 
 	m.logger.Info("memory diagnostic info",
-		zap.Bool("isMemoryLimitReached", isMemoryLimitReached),
+		zap.String("scope", scope),
+		zap.Bool("isMemoryLimitReached", memoryLimitReached),
 		zap.Float64("memoryLimitMiB", bytesToMiB(stats.MemoryLimit)),
 		zap.Float64("heapGoalMiB", bytesToMiB(stats.HeapGoal)),
 		zap.Float64("heapLiveMiB", bytesToMiB(stats.HeapLive)),
@@ -98,6 +104,4 @@ func (m *MemoryInfo) emitMemoryInfo() {
 		zap.Float64("totalAllocMiB", bytesToMiB(stats.TotalAlloc)),
 		zap.Float64("totalFreeMiB", bytesToMiB(stats.TotalFree)),
 	)
-
-	m.lastReportTime = time.Now()
 }

@@ -17,6 +17,7 @@ type GatewayConfigOptions struct {
 	ServiceGraphDisabled  *bool
 	ClusterMetricsEnabled *bool
 	OdigosNamespace       string
+	MemoryDiagnostics     *common.MemoryDiagnosticsConfiguration
 }
 
 func GetGatewayConfig(
@@ -172,6 +173,14 @@ func CalculateGatewayConfig(
 		insertClusterMetricsResources(currentConfig, gatewayOptions.OdigosNamespace)
 	}
 
+	if gatewayOptions.MemoryDiagnostics != nil && gatewayOptions.MemoryDiagnostics.Enabled != nil && *gatewayOptions.MemoryDiagnostics.Enabled {
+		currentConfig.Extensions["memory_info"] = config.GenericMap{
+			"enabled":  *gatewayOptions.MemoryDiagnostics.Enabled,
+			"interval": gatewayOptions.MemoryDiagnostics.Interval,
+		}
+		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, "memory_info")
+	}
+
 	// Final marshal to YAML
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
@@ -309,7 +318,6 @@ func GetBasicConfig() *config.Config {
 			consts.GenericBatchProcessorConfigKey: config.GenericMap{},
 		},
 		Extensions: config.GenericMap{
-			"memory_info": config.GenericMap{},
 			"health_check": config.GenericMap{
 				"endpoint": "0.0.0.0:13133",
 			},
@@ -320,7 +328,7 @@ func GetBasicConfig() *config.Config {
 		Exporters: map[string]interface{}{},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "pprof", "memory_info"},
+			Extensions: []string{"health_check", "pprof"},
 		},
 	}
 }

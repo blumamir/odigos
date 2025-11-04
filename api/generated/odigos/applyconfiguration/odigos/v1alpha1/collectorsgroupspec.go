@@ -35,6 +35,7 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	ClusterMetricsEnabled     *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
 	HttpsProxyAddress         *string                                                     `json:"httpsProxyAddress,omitempty"`
 	Metrics                   *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
+	MemoryDiagnostics         *common.MemoryDiagnosticsConfiguration                      `json:"memoryDiagnostics,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -120,5 +121,13 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithHttpsProxyAddress(value stri
 // If called multiple times, the Metrics field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithMetrics(value *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) *CollectorsGroupSpecApplyConfiguration {
 	b.Metrics = value
+	return b
+}
+
+// WithMemoryDiagnostics sets the MemoryDiagnostics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MemoryDiagnostics field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithMemoryDiagnostics(value common.MemoryDiagnosticsConfiguration) *CollectorsGroupSpecApplyConfiguration {
+	b.MemoryDiagnostics = &value
 	return b
 }

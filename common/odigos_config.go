@@ -67,29 +67,19 @@ type CollectorNodeConfiguration struct {
 	OtlpExporterConfiguration *OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type OtlpExporterConfiguration struct {
 	EnableDataCompression *bool           `json:"enableDataCompression,omitempty"`
 	Timeout               string          `json:"timeout,omitempty"`
 	RetryOnFailure        *RetryOnFailure `json:"retryOnFailure,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type RetryOnFailure struct {
 	Enabled         *bool  `json:"enabled,omitempty"`
 	InitialInterval string `json:"initialInterval,omitempty"`
 	MaxInterval     string `json:"maxInterval,omitempty"`
 	MaxElapsedTime  string `json:"maxElapsedTime,omitempty"`
-}
-
-type MemoryDiagnosticsConfiguration struct {
-
-	// memory diagnostics is disabled by default.
-	// set to "true" to enable it.
-	Enabled *bool `json:"enabled,omitempty"`
-
-	// how often to report memory diagnostics.
-	// format: duration string (100ms, 2s, etc).
-	// default is 100ms.
-	Interval string `json:"interval,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {
@@ -155,6 +145,20 @@ type CollectorGatewayConfiguration struct {
 	// and remove/disable it after the issue is resolved.
 	MemoryDiagnostics *MemoryDiagnosticsConfiguration `json:"memoryDiagnostics,omitempty"`
 }
+
+// +kubebuilder:object:generate=true
+type MemoryDiagnosticsConfiguration struct {
+
+	// memory diagnostics is disabled by default.
+	// set to "true" to enable it.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// how often to report memory diagnostics.
+	// format: duration string (100ms, 2s, etc).
+	// default is 100ms.
+	Interval string `json:"interval,omitempty"`
+}
+
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
 }

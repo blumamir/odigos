@@ -77,9 +77,6 @@ type CollectorsGroupResourcesSettings struct {
 	// this is when go runtime will start garbage collection.
 	// it is recommended to be set to 80% of the hard limit of the memory limiter.
 	GomemlimitMiB int `json:"gomemlimitMiB"`
-
-	// set if the user is requesting additional memory diagnostics to be printed to the logs.
-	MemoryDiagnostics *common.MemoryDiagnosticsConfiguration `json:"memoryDiagnostics,omitempty"`
 }
 
 type ServiceGraphSettings struct {
@@ -180,6 +177,9 @@ type CollectorsGroupSpec struct {
 	// it allows for the collector group reconciler to be simplified,
 	// and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
 	Metrics *CollectorsGroupMetricsCollectionSettings `json:"metrics,omitempty"`
+
+	// set if the user is requesting additional memory diagnostics to be printed to the collector logs.
+	MemoryDiagnostics *common.MemoryDiagnosticsConfiguration `json:"memoryDiagnostics,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

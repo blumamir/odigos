@@ -145,6 +145,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		ServiceGraphDisabled:  gateway.Spec.ServiceGraphDisabled,
 		ClusterMetricsEnabled: gateway.Spec.ClusterMetricsEnabled,
 		OdigosNamespace:       env.GetCurrentNamespace(),
+		MemoryDiagnostics:     gateway.Spec.MemoryDiagnostics,
 	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(

@@ -13,27 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool, clusterMetricsEnabled *bool, httpsProxyAddress *string) *odigosv1.CollectorsGroup {
-	return &odigosv1.CollectorsGroup{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "CollectorsGroup",
-			APIVersion: "odigos.io/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.OdigosClusterCollectorCollectorGroupName,
-			Namespace: namespace,
-		},
-		Spec: odigosv1.CollectorsGroupSpec{
-			Role:                    odigosv1.CollectorsGroupRoleClusterGateway,
-			CollectorOwnMetricsPort: k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault,
-			ResourcesSettings:       *resourcesSettings,
-			ServiceGraphDisabled:    serviceGraphDisabled,
-			ClusterMetricsEnabled:   clusterMetricsEnabled,
-			HttpsProxyAddress:       httpsProxyAddress,
-		},
-	}
-}
-
 func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 
 	namespace := env.GetCurrentNamespace()
@@ -63,7 +42,25 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	// and started.
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
-	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress)
+	clusterCollectorGroup := &odigosv1.CollectorsGroup{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "CollectorsGroup",
+			APIVersion: "odigos.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigosClusterCollectorCollectorGroupName,
+			Namespace: namespace,
+		},
+		Spec: odigosv1.CollectorsGroupSpec{
+			Role:                    odigosv1.CollectorsGroupRoleClusterGateway,
+			CollectorOwnMetricsPort: k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault,
+			ResourcesSettings:       *resourceSettings,
+			ServiceGraphDisabled:    serviceGraphDisabled,
+			ClusterMetricsEnabled:   clusterMetricsEnabled,
+			HttpsProxyAddress:       odigosConfiguration.CollectorGateway.HttpsProxyAddress,
+			MemoryDiagnostics:       odigosConfiguration.CollectorGateway.MemoryDiagnostics,
+		},
+	}
 	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, clusterCollectorGroup, scheme)
 	if err != nil {
 		return err
