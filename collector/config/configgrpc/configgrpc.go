@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc/tap"
 
 	rtml "github.com/odigos-io/go-rtml"
+	memoryinfoextension "github.com/odigos-io/odigos/collector/extension/memoryinfoextension"
 
 	"go.opentelemetry.io/collector/client"
 	"go.opentelemetry.io/collector/component"
@@ -225,6 +226,9 @@ type ServerConfig struct {
 	// If false (gateway collectors), requests will be rejected with backpressure when overloaded.
 	// Gateway will reject requests while node-collector will drop them.
 	DropOnOverload bool `mapstructure:"drop_on_overload,omitempty"`
+
+	// if set to a memory_info extension, it will log memory diagnostics info on every requests.
+	MemoryDiagnosticsExtention *component.ID `mapstructure:"memory_diagnostics_extention,omitempty"`
 
 	// prevent unkeyed literal initialization
 	_ struct{}
@@ -557,8 +561,27 @@ func (sc *ServerConfig) getGrpcServerOptions(
 
 	opts = append(opts, grpc.StatsHandler(otelgrpc.NewServerHandler(otelOpts...)), grpc.ChainUnaryInterceptor(uInterceptors...), grpc.ChainStreamInterceptor(sInterceptors...))
 
+	var memoryInfoExtension *memoryinfoextension.MemoryInfo
+	if sc.MemoryDiagnosticsExtention != nil {
+		ext, ok := host.GetExtensions()[*sc.MemoryDiagnosticsExtention]
+		if !ok {
+			return nil, fmt.Errorf("memory_info extension not found")
+		}
+		castedExt, ok := ext.(*memoryinfoextension.MemoryInfo)
+		if !ok {
+			return nil, fmt.Errorf("memory_info extension is not a memoryinfoextension.MemoryInfo")
+		}
+		memoryInfoExtension = castedExt
+	}
+
 	opts = append(opts, grpc.InTapHandle(func(ctx context.Context, info *tap.Info) (context.Context, error) {
-		if rtml.IsMemLimitReached() {
+		memoryLimitReached := rtml.IsMemLimitReached()
+
+		if memoryInfoExtension != nil {
+			memoryInfoExtension.LogCheapMemoryInfo("gRPC OTLP request", memoryLimitReached)
+		}
+
+		if memoryLimitReached {
 			if sc.DropOnOverload {
 				settings.Logger.Info("OTLP gRPC receiver detected memory limit reached, dropping a batch")
 				return ctx, errMemoryLimitReachedDataDropped

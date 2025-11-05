@@ -27,6 +27,7 @@ require (
 	go.opentelemetry.io/otel v1.38.0
 	go.uber.org/goleak v1.3.0
 	google.golang.org/grpc v1.76.0
+	github.com/odigos-io/odigos/collector/extension/memoryinfoextension v0.0.0
 )
 
 require (
@@ -74,4 +75,8 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250825161204-c5933d9347a5 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
+
+replace (
+github.com/odigos-io/odigos/collector/extension/memoryinfoextension => ../../extension/memoryinfoextension
 )

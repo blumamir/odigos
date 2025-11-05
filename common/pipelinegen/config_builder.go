@@ -173,12 +173,13 @@ func CalculateGatewayConfig(
 		insertClusterMetricsResources(currentConfig, gatewayOptions.OdigosNamespace)
 	}
 
-	if gatewayOptions.MemoryDiagnostics != nil && gatewayOptions.MemoryDiagnostics.Enabled != nil && *gatewayOptions.MemoryDiagnostics.Enabled {
+	if gatewayOptions.MemoryDiagnostics != nil && gatewayOptions.MemoryDiagnostics.Enabled != nil {
 		currentConfig.Extensions["memory_info"] = config.GenericMap{
-			"enabled":  *gatewayOptions.MemoryDiagnostics.Enabled,
-			"interval": gatewayOptions.MemoryDiagnostics.Interval,
+			"enabled":      *gatewayOptions.MemoryDiagnostics.Enabled,
+			"loopInterval": gatewayOptions.MemoryDiagnostics.Interval,
 		}
 		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, "memory_info")
+		currentConfig.Receivers["otlp"].(config.GenericMap)["memory_diagnostics_extention"] = "memory_info"
 	}
 
 	// Final marshal to YAML
