@@ -40,6 +40,10 @@ data:
     {{- if .Values.ui.uiMode }}
     uiMode: {{ .Values.ui.uiMode }}
     {{- end }}
+    {{- if .Values.ui.mcpAccessMode }}
+    mcpAccessMode: {{ .Values.ui.mcpAccessMode }}
+    {{- end }}
+    mcpEnabled: {{ dig "mcp" "enabled" true .Values.ui }}
     {{- if .Values.ui.uiPaginationLimit }}
     uiPaginationLimit: {{ .Values.ui.uiPaginationLimit }}
     {{- end }}
@@ -299,6 +303,10 @@ data:
     {{- if .Values.metricsSources }}
     metricsSources:
       {{- toYaml .Values.metricsSources | nindent 6 }}
+    {{- end }}
+    {{- if .Values.traceCorrelations }}
+    traceCorrelations:
+      {{- toYaml .Values.traceCorrelations | nindent 6 }}
     {{- end }}
     {{- if .Values.odiglet.traceIdSuffix }}
     traceIdSuffix: {{ .Values.odiglet.traceIdSuffix }}
