@@ -4,6 +4,7 @@ export * from './data-streams';
 export * from './describe';
 export * from './destination';
 export * from './diagnose';
+export * from './go-enterprise-offsets';
 export * from './instrumentation-rules';
 export * from './k8s-manifest';
 export * from './metrics';

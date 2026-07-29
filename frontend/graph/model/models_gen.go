@@ -606,6 +606,23 @@ type GetDestinationCategories struct {
 	Categories []*DestinationsCategory `json:"categories"`
 }
 
+type GoEnterpriseOffsetMinorVersionEnumeration struct {
+	MinorVersion string   `json:"minorVersion"`
+	Versions     []string `json:"versions"`
+}
+
+type GoEnterpriseOffsetModule struct {
+	Module        string                                       `json:"module"`
+	MinVersion    string                                       `json:"minVersion"`
+	MaxVersion    string                                       `json:"maxVersion"`
+	MinorVersions []*GoEnterpriseOffsetMinorVersionEnumeration `json:"minorVersions"`
+}
+
+type GoEnterpriseOffsets struct {
+	Timestamp string                      `json:"timestamp"`
+	Mods      []*GoEnterpriseOffsetModule `json:"mods"`
+}
+
 type GolangCustomProbe struct {
 	PackageName        *string `json:"packageName,omitempty"`
 	FunctionName       *string `json:"functionName,omitempty"`

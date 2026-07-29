@@ -8,7 +8,9 @@
 //     derive platform/tier/version BEFORE the kit's API context is fully
 //     wired (chicken-and-egg with the operation context).
 //   - `useSetupHelpers` — orchestrates onboarding-step transitions, no API.
+//   - `useGoEnterpriseOffsets` — temporary host page until kit container exists.
 export * from './common';
 export * from './config';
+export * from './go-enterprise-offsets';
 export * from './notification';
 export * from './tokens';

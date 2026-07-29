@@ -1,0 +1,36 @@
+# =====================
+# Go Enterprise Offsets
+# Content of the odigos-go-offsets ConfigMap used by odiglet for Go
+# instrumentation offset lookups.
+# =====================
+
+type GoEnterpriseOffsets {
+  timestamp: String!
+  mods: [GoEnterpriseOffsetModule!]!
+}
+
+type GoEnterpriseOffsetMinorVersionEnumeration {
+  minorVersion: String!
+  versions: [String!]!
+}
+
+type GoEnterpriseOffsetModule {
+  module: String!
+  # Lowest and highest versions supported by this module (across all offsets).
+  minVersion: String!
+  maxVersion: String!
+  # Deduped union of all versions supported by this module.
+  minorVersions: [GoEnterpriseOffsetMinorVersionEnumeration!]!
+}
+
+extend type Query {
+  # Parsed go_offset_results.json from the odigos-go-offsets ConfigMap in the
+  # Odigos namespace.
+  goEnterpriseOffsets: GoEnterpriseOffsets!
+}
+
+extend type Mutation {
+  # Replaces the go_offset_results.json key in the odigos-go-offsets ConfigMap
+  # in the Odigos namespace with the provided content.
+  updateGoEnterpriseOffsets(content: String!): Boolean!
+}

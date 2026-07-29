@@ -277,7 +277,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/hashicorp/go-version v1.9.0 // indirect
+	github.com/hashicorp/go-version v1.9.0
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
