@@ -100,15 +100,18 @@ func goEnterpriseOffsetsToModel(parsed *versionedModules) *model.GoEnterpriseOff
 		byMinorVersions, minVersion, maxVersion := moduleVersions(mod)
 		minorVersionsModel := make([]*model.GoEnterpriseOffsetMinorVersionEnumeration, 0, len(byMinorVersions))
 		minorVersions := make([]string, 0, len(byMinorVersions))
-		for majorMinor, _ := range byMinorVersions {
+		for majorMinor := range byMinorVersions {
 			minorVersions = append(minorVersions, majorMinor)
 		}
-		sort.Strings(minorVersions)
+		sort.Slice(minorVersions, func(i, j int) bool {
+			return compareVersions(minorVersions[i], minorVersions[j])
+		})
 
 		for _, minorVersion := range minorVersions {
-			// sort versions
 			versionsForThisMinor := byMinorVersions[minorVersion]
-			sort.Strings(versionsForThisMinor)
+			sort.Slice(versionsForThisMinor, func(i, j int) bool {
+				return compareVersions(versionsForThisMinor[i], versionsForThisMinor[j])
+			})
 			minorVersionsModel = append(minorVersionsModel, &model.GoEnterpriseOffsetMinorVersionEnumeration{
 				MinorVersion: minorVersion,
 				Versions:     versionsForThisMinor,
@@ -154,7 +157,8 @@ func moduleVersions(mod *jsonModule) (byMinorVersions map[string][]string, minVe
 		if max == nil || v.GreaterThan(max) {
 			max = v
 		}
-		majorMinor := fmt.Sprintf("%d.%d")
+		seg := v.Segments()
+		majorMinor := fmt.Sprintf("%d.%d", seg[0], seg[1])
 		if minorToVersions == nil {
 			minorToVersions = make(map[string][]string)
 		}
@@ -185,12 +189,32 @@ func moduleVersions(mod *jsonModule) (byMinorVersions map[string][]string, minVe
 		}
 	}
 
+	if min == nil || max == nil {
+		return minorToVersions, "", ""
+	}
 	return minorToVersions, min.String(), max.String()
 }
 
-// UpdateGoEnterpriseOffsets replaces the go_offset_results.json key in the
-// odigos-go-offsets ConfigMap in the Odigos namespace.
+func compareVersions(a, b string) bool {
+	va, errA := version.NewVersion(a)
+	vb, errB := version.NewVersion(b)
+	if errA != nil || errB != nil {
+		return a < b
+	}
+	return va.LessThan(vb)
+}
+
+// UpdateGoEnterpriseOffsets writes the provided offsets file content to the
+// odigos-go-offsets ConfigMap (same encoding as `odigos pro update-offsets`).
 func UpdateGoEnterpriseOffsets(ctx context.Context, content string) error {
+	if GetTier(ctx) == model.TierCommunity {
+		return fmt.Errorf("custom offsets support is only available in Odigos pro tier")
+	}
+
+	return writeGoEnterpriseOffsetsConfigMap(ctx, []byte(content))
+}
+
+func writeGoEnterpriseOffsetsConfigMap(ctx context.Context, data []byte) error {
 	ns := env.GetCurrentNamespace()
 
 	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
@@ -202,10 +226,10 @@ func UpdateGoEnterpriseOffsets(ctx context.Context, content string) error {
 		cm.Data = make(map[string]string)
 	}
 
-	if strings.TrimSpace(content) == "" {
+	if len(data) == 0 {
 		cm.Data[k8sconsts.GoOffsetsFileName] = ""
 	} else {
-		encoded, err := json.Marshal(content)
+		encoded, err := json.Marshal(string(data))
 		if err != nil {
 			return fmt.Errorf("failed to encode go enterprise offsets: %w", err)
 		}

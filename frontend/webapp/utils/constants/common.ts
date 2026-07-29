@@ -7,6 +7,9 @@ const isLoopbackHost = typeof window !== 'undefined' ? /^(localhost|127\.0\.0\.1
 
 export const IS_LOCAL = IS_DEV && isLoopbackHost;
 
+/** Public go offsets manifest (same URL as `odigos pro update-offsets`). */
+export const GO_OFFSETS_PUBLIC_URL = 'https://storage.googleapis.com/odigos-cloud/offset_results_min.json';
+
 /**
  * Initial operation context used while we bootstrap. The real context
  * (platformType/tier/version) is derived by the layout via `useConfig`

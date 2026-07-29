@@ -30,7 +30,7 @@ extend type Query {
 }
 
 extend type Mutation {
-  # Replaces the go_offset_results.json key in the odigos-go-offsets ConfigMap
-  # in the Odigos namespace with the provided content.
+  # Updates the odigos-go-offsets ConfigMap with offsets content fetched by the
+  # browser from the public offsets URL (UI pods may have no outbound internet).
   updateGoEnterpriseOffsets(content: String!): Boolean!
 }

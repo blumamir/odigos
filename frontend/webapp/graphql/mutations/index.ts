@@ -2,6 +2,7 @@ export * from './action';
 export * from './config';
 export * from './data-stream';
 export * from './destination';
+export * from './go-enterprise-offsets';
 export * from './instrumentation-rule';
 export * from './namespace';
 export * from './source';

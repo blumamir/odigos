@@ -21,20 +21,20 @@ func TestParseGoEnterpriseOffsetsContent_jsonString(t *testing.T) {
 	if len(model.Mods) != 1 || model.Mods[0].Module != "example.com/mod" {
 		t.Fatalf("unexpected module: %+v", model.Mods)
 	}
-	wantVersions := []string{"1.0.0", "1.1.0", "1.2.0"}
-	if len(model.Mods[0].Versions) != len(wantVersions) {
-		t.Fatalf("unexpected versions: %v", model.Mods[0].Versions)
-	}
-	for i := range wantVersions {
-		if model.Mods[0].Versions[i] != wantVersions[i] {
-			t.Fatalf("unexpected versions: %v", model.Mods[0].Versions)
-		}
-	}
 	if model.Mods[0].MinVersion != "1.0.0" {
 		t.Fatalf("unexpected minVersion: %q", model.Mods[0].MinVersion)
 	}
 	if model.Mods[0].MaxVersion != "1.2.0" {
 		t.Fatalf("unexpected maxVersion: %q", model.Mods[0].MaxVersion)
+	}
+	wantMinors := []string{"1.0", "1.1", "1.2"}
+	if len(model.Mods[0].MinorVersions) != len(wantMinors) {
+		t.Fatalf("unexpected minorVersions: %+v", model.Mods[0].MinorVersions)
+	}
+	for i, want := range wantMinors {
+		if model.Mods[0].MinorVersions[i].MinorVersion != want {
+			t.Fatalf("unexpected minorVersions[%d]: got %q want %q", i, model.Mods[0].MinorVersions[i].MinorVersion, want)
+		}
 	}
 	if parsed.Timestamp.UTC() != time.Date(2026, 7, 29, 0, 16, 13, 514297770, time.UTC) {
 		t.Fatalf("unexpected timestamp: %v", parsed.Timestamp)

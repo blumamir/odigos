@@ -3,11 +3,16 @@
 import { useQuery } from '@apollo/client/react';
 import { GET_GO_ENTERPRISE_OFFSETS } from '@/graphql';
 
+export type GoEnterpriseOffsetMinorVersion = {
+  minorVersion: string;
+  versions: string[];
+};
+
 export type GoEnterpriseOffsetModule = {
   module: string;
   minVersion: string;
   maxVersion: string;
-  versions: string[];
+  minorVersions: GoEnterpriseOffsetMinorVersion[];
 };
 
 export type GoEnterpriseOffsets = {

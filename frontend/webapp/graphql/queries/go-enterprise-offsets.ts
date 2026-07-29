@@ -8,7 +8,10 @@ export const GET_GO_ENTERPRISE_OFFSETS = gql`
         module
         minVersion
         maxVersion
-        versions
+        minorVersions {
+          minorVersion
+          versions
+        }
       }
     }
   }
