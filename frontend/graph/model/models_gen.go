@@ -611,6 +611,12 @@ type GoEnterpriseOffsetMinorVersionEnumeration struct {
 	Versions     []string `json:"versions"`
 }
 
+type GoEnterpriseOffsetMinorVersionUpdate struct {
+	MinorVersion string                             `json:"minorVersion"`
+	IsNew        bool                               `json:"isNew"`
+	Versions     []*GoEnterpriseOffsetVersionUpdate `json:"versions"`
+}
+
 type GoEnterpriseOffsetModule struct {
 	Module        string                                       `json:"module"`
 	MinVersion    string                                       `json:"minVersion"`
@@ -618,9 +624,29 @@ type GoEnterpriseOffsetModule struct {
 	MinorVersions []*GoEnterpriseOffsetMinorVersionEnumeration `json:"minorVersions"`
 }
 
+type GoEnterpriseOffsetModuleUpdate struct {
+	Module        string                                  `json:"module"`
+	IsNew         bool                                    `json:"isNew"`
+	MinVersion    string                                  `json:"minVersion"`
+	MaxVersion    string                                  `json:"maxVersion"`
+	MinorVersions []*GoEnterpriseOffsetMinorVersionUpdate `json:"minorVersions"`
+}
+
+type GoEnterpriseOffsetVersionUpdate struct {
+	Version string `json:"version"`
+	IsNew   bool   `json:"isNew"`
+}
+
 type GoEnterpriseOffsets struct {
 	Timestamp string                      `json:"timestamp"`
 	Mods      []*GoEnterpriseOffsetModule `json:"mods"`
+}
+
+type GoEnterpriseOffsetsUpdateCheck struct {
+	HasUpdates        bool                              `json:"hasUpdates"`
+	CurrentTimestamp  string                            `json:"currentTimestamp"`
+	ProposedTimestamp string                            `json:"proposedTimestamp"`
+	Mods              []*GoEnterpriseOffsetModuleUpdate `json:"mods"`
 }
 
 type GolangCustomProbe struct {

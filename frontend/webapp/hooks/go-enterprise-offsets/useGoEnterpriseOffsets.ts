@@ -20,6 +20,32 @@ export type GoEnterpriseOffsets = {
   mods: GoEnterpriseOffsetModule[];
 };
 
+export type GoEnterpriseOffsetVersionUpdate = {
+  version: string;
+  isNew: boolean;
+};
+
+export type GoEnterpriseOffsetMinorVersionUpdate = {
+  minorVersion: string;
+  isNew: boolean;
+  versions: GoEnterpriseOffsetVersionUpdate[];
+};
+
+export type GoEnterpriseOffsetModuleUpdate = {
+  module: string;
+  isNew: boolean;
+  minVersion: string;
+  maxVersion: string;
+  minorVersions: GoEnterpriseOffsetMinorVersionUpdate[];
+};
+
+export type GoEnterpriseOffsetsUpdateCheck = {
+  hasUpdates: boolean;
+  currentTimestamp: string;
+  proposedTimestamp: string;
+  mods: GoEnterpriseOffsetModuleUpdate[];
+};
+
 type GoEnterpriseOffsetsResponse = {
   goEnterpriseOffsets: GoEnterpriseOffsets;
 };

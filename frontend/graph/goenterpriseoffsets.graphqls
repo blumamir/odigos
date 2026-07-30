@@ -23,6 +23,36 @@ type GoEnterpriseOffsetModule {
   minorVersions: [GoEnterpriseOffsetMinorVersionEnumeration!]!
 }
 
+# Result of comparing installed offsets against a candidate offsets file.
+# mods is the current installed set plus any versions/modules that would be added.
+type GoEnterpriseOffsetVersionUpdate {
+  version: String!
+  isNew: Boolean!
+}
+
+type GoEnterpriseOffsetMinorVersionUpdate {
+  minorVersion: String!
+  isNew: Boolean!
+  versions: [GoEnterpriseOffsetVersionUpdate!]!
+}
+
+type GoEnterpriseOffsetModuleUpdate {
+  module: String!
+  isNew: Boolean!
+  minVersion: String!
+  maxVersion: String!
+  minorVersions: [GoEnterpriseOffsetMinorVersionUpdate!]!
+}
+
+type GoEnterpriseOffsetsUpdateCheck {
+  hasUpdates: Boolean!
+  # Generation time of the currently installed offsets.
+  currentTimestamp: String!
+  # Generation time of the candidate offsets being checked.
+  proposedTimestamp: String!
+  mods: [GoEnterpriseOffsetModuleUpdate!]!
+}
+
 extend type Query {
   # Parsed go_offset_results.json from the odigos-go-offsets ConfigMap in the
   # Odigos namespace.
@@ -33,4 +63,8 @@ extend type Mutation {
   # Updates the odigos-go-offsets ConfigMap with offsets content fetched by the
   # browser from the public offsets URL (UI pods may have no outbound internet).
   updateGoEnterpriseOffsets(content: String!): Boolean!
+  # Compares the provided offsets file content against the installed ConfigMap
+  # without writing. Returns current offsets annotated with entries that would
+  # be added by an update.
+  checkGoEnterpriseOffsetsUpdates(content: String!): GoEnterpriseOffsetsUpdateCheck!
 }

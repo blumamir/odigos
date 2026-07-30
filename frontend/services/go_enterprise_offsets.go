@@ -66,11 +66,20 @@ func parseGoEnterpriseOffsetsContent(content string) (*versionedModules, error) 
 	if err := json.Unmarshal([]byte(trimmed), &inner); err != nil {
 		return nil, fmt.Errorf("invalid go enterprise offsets JSON: %w", err)
 	}
-	inner = strings.TrimSpace(inner)
+	return parseGoEnterpriseOffsetsFile(inner)
+}
+
+// parseGoEnterpriseOffsetsFile parses offsets file content as returned by the
+// public offsets URL (raw JSON, optional ---SIGNATURE--- trailer).
+func parseGoEnterpriseOffsetsFile(content string) (*versionedModules, error) {
+	inner := strings.TrimSpace(content)
 	if inner == "" {
 		return &versionedModules{Mods: []*jsonModule{}}, nil
 	}
 	inner = stripGoEnterpriseOffsetsSignature(inner)
+	if inner == "" {
+		return &versionedModules{Mods: []*jsonModule{}}, nil
+	}
 
 	var parsed versionedModules
 	if err := json.Unmarshal([]byte(inner), &parsed); err != nil {
@@ -104,7 +113,7 @@ func goEnterpriseOffsetsToModel(parsed *versionedModules) *model.GoEnterpriseOff
 			minorVersions = append(minorVersions, majorMinor)
 		}
 		sort.Slice(minorVersions, func(i, j int) bool {
-			return compareVersions(minorVersions[i], minorVersions[j])
+			return compareVersions(minorVersions[j], minorVersions[i])
 		})
 
 		for _, minorVersion := range minorVersions {
@@ -124,6 +133,10 @@ func goEnterpriseOffsetsToModel(parsed *versionedModules) *model.GoEnterpriseOff
 			MinorVersions: minorVersionsModel,
 		})
 	}
+
+	sort.Slice(mods, func(i, j int) bool {
+		return strings.ToLower(mods[i].Module) < strings.ToLower(mods[j].Module)
+	})
 
 	timestamp := ""
 	if !parsed.Timestamp.IsZero() {
@@ -202,6 +215,179 @@ func compareVersions(a, b string) bool {
 		return a < b
 	}
 	return va.LessThan(vb)
+}
+
+// CheckGoEnterpriseOffsetsUpdates compares candidate offsets file content
+// against the installed ConfigMap without writing. The result is the current
+// offsets plus versions/modules that would be added by an update.
+func CheckGoEnterpriseOffsetsUpdates(ctx context.Context, content string) (*model.GoEnterpriseOffsetsUpdateCheck, error) {
+	currentRaw, err := getGoEnterpriseOffsetsRaw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	current, err := parseGoEnterpriseOffsetsContent(currentRaw)
+	if err != nil {
+		return nil, err
+	}
+	proposed, err := parseGoEnterpriseOffsetsFile(content)
+	if err != nil {
+		return nil, err
+	}
+	return compareGoEnterpriseOffsets(current, proposed), nil
+}
+
+func compareGoEnterpriseOffsets(current, proposed *versionedModules) *model.GoEnterpriseOffsetsUpdateCheck {
+	currentVersions := make(map[string]map[string]struct{}, len(current.Mods))
+	moduleNames := make([]string, 0, len(current.Mods)+len(proposed.Mods))
+	seenModules := make(map[string]struct{}, len(current.Mods)+len(proposed.Mods))
+
+	for _, mod := range current.Mods {
+		if mod == nil || mod.Module == "" {
+			continue
+		}
+		currentVersions[mod.Module] = moduleVersionSet(mod)
+		if _, ok := seenModules[mod.Module]; !ok {
+			seenModules[mod.Module] = struct{}{}
+			moduleNames = append(moduleNames, mod.Module)
+		}
+	}
+
+	proposedVersions := make(map[string]map[string]struct{}, len(proposed.Mods))
+	for _, mod := range proposed.Mods {
+		if mod == nil || mod.Module == "" {
+			continue
+		}
+		proposedVersions[mod.Module] = moduleVersionSet(mod)
+		if _, ok := seenModules[mod.Module]; !ok {
+			seenModules[mod.Module] = struct{}{}
+			moduleNames = append(moduleNames, mod.Module)
+		}
+	}
+	sort.Slice(moduleNames, func(i, j int) bool {
+		return strings.ToLower(moduleNames[i]) < strings.ToLower(moduleNames[j])
+	})
+
+	hasUpdates := false
+	mods := make([]*model.GoEnterpriseOffsetModuleUpdate, 0, len(moduleNames))
+	for _, name := range moduleNames {
+		curSet, existsInCurrent := currentVersions[name]
+		propSet := proposedVersions[name]
+		isNewModule := !existsInCurrent
+		if isNewModule && len(propSet) > 0 {
+			hasUpdates = true
+		}
+
+		allVersions := make([]string, 0, len(curSet)+len(propSet))
+		newVersionSet := make(map[string]struct{})
+		for v := range curSet {
+			allVersions = append(allVersions, v)
+		}
+		for v := range propSet {
+			if _, ok := curSet[v]; ok {
+				continue
+			}
+			allVersions = append(allVersions, v)
+			newVersionSet[v] = struct{}{}
+			hasUpdates = true
+		}
+
+		byMinor := make(map[string][]string)
+		var min, max *version.Version
+		for _, raw := range allVersions {
+			v, err := version.NewVersion(raw)
+			if err != nil {
+				continue
+			}
+			if min == nil || v.LessThan(min) {
+				min = v
+			}
+			if max == nil || v.GreaterThan(max) {
+				max = v
+			}
+			seg := v.Segments()
+			majorMinor := fmt.Sprintf("%d.%d", seg[0], seg[1])
+			byMinor[majorMinor] = append(byMinor[majorMinor], raw)
+		}
+
+		minorKeys := make([]string, 0, len(byMinor))
+		for k := range byMinor {
+			minorKeys = append(minorKeys, k)
+		}
+		sort.Slice(minorKeys, func(i, j int) bool {
+			return compareVersions(minorKeys[j], minorKeys[i])
+		})
+
+		minorVersions := make([]*model.GoEnterpriseOffsetMinorVersionUpdate, 0, len(minorKeys))
+		for _, minorKey := range minorKeys {
+			versions := byMinor[minorKey]
+			sort.Slice(versions, func(i, j int) bool {
+				return compareVersions(versions[i], versions[j])
+			})
+			versionUpdates := make([]*model.GoEnterpriseOffsetVersionUpdate, 0, len(versions))
+			minorIsNew := true
+			for _, ver := range versions {
+				_, isNew := newVersionSet[ver]
+				if !isNew {
+					minorIsNew = false
+				}
+				versionUpdates = append(versionUpdates, &model.GoEnterpriseOffsetVersionUpdate{
+					Version: ver,
+					IsNew:   isNew,
+				})
+			}
+			if isNewModule {
+				minorIsNew = true
+			}
+			minorVersions = append(minorVersions, &model.GoEnterpriseOffsetMinorVersionUpdate{
+				MinorVersion: minorKey,
+				IsNew:        minorIsNew,
+				Versions:     versionUpdates,
+			})
+		}
+
+		minVersion, maxVersion := "", ""
+		if min != nil {
+			minVersion = min.String()
+		}
+		if max != nil {
+			maxVersion = max.String()
+		}
+
+		mods = append(mods, &model.GoEnterpriseOffsetModuleUpdate{
+			Module:        name,
+			IsNew:         isNewModule,
+			MinVersion:    minVersion,
+			MaxVersion:    maxVersion,
+			MinorVersions: minorVersions,
+		})
+	}
+
+	currentTimestamp := ""
+	if !current.Timestamp.IsZero() {
+		currentTimestamp = current.Timestamp.UTC().Format(time.RFC3339Nano)
+	}
+	proposedTimestamp := ""
+	if !proposed.Timestamp.IsZero() {
+		proposedTimestamp = proposed.Timestamp.UTC().Format(time.RFC3339Nano)
+	}
+
+	return &model.GoEnterpriseOffsetsUpdateCheck{
+		HasUpdates:        hasUpdates,
+		CurrentTimestamp:  currentTimestamp,
+		ProposedTimestamp: proposedTimestamp,
+		Mods:              mods,
+	}
+}
+
+func moduleVersionSet(mod *jsonModule) map[string]struct{} {
+	byMinor, _, _ := moduleVersions(mod)
+	set := make(map[string]struct{})
+	for _, versions := range byMinor {
+		for _, v := range versions {
+			set[v] = struct{}{}
+		}
+	}
+	return set
 }
 
 // UpdateGoEnterpriseOffsets writes the provided offsets file content to the

@@ -19,6 +19,11 @@ func (r *mutationResolver) UpdateGoEnterpriseOffsets(ctx context.Context, conten
 	return true, nil
 }
 
+// CheckGoEnterpriseOffsetsUpdates is the resolver for the checkGoEnterpriseOffsetsUpdates field.
+func (r *mutationResolver) CheckGoEnterpriseOffsetsUpdates(ctx context.Context, content string) (*model.GoEnterpriseOffsetsUpdateCheck, error) {
+	return services.CheckGoEnterpriseOffsetsUpdates(ctx, content)
+}
+
 // GoEnterpriseOffsets is the resolver for the goEnterpriseOffsets field.
 func (r *queryResolver) GoEnterpriseOffsets(ctx context.Context) (*model.GoEnterpriseOffsets, error) {
 	return services.GetGoEnterpriseOffsets(ctx)
