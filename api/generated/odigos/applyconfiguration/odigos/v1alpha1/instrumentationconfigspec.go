@@ -55,6 +55,9 @@ type InstrumentationConfigSpecApplyConfiguration struct {
 	// Pods created before this time may not be in alignment with the AgentsMetaHash.
 	// e.g. can lack the odigos label, or have a different value.
 	AgentsMetaHashChangedTime *v1.Time `json:"agentsMetaHashChangedTime,omitempty"`
+	// The post instrument health monitor tracking for the workload.
+	// nil when the source has no agent injection enabled and thus not instrumented by odigos.
+	PostInstrumentHealthMonitor *PostInstrumentHealthMonitorApplyConfiguration `json:"postInstrumentHealthMonitor,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -144,5 +147,13 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentsMetaHash(value s
 // If called multiple times, the AgentsMetaHashChangedTime field is set to the value of the last call.
 func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentsMetaHashChangedTime(value v1.Time) *InstrumentationConfigSpecApplyConfiguration {
 	b.AgentsMetaHashChangedTime = &value
+	return b
+}
+
+// WithPostInstrumentHealthMonitor sets the PostInstrumentHealthMonitor field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PostInstrumentHealthMonitor field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithPostInstrumentHealthMonitor(value *PostInstrumentHealthMonitorApplyConfiguration) *InstrumentationConfigSpecApplyConfiguration {
+	b.PostInstrumentHealthMonitor = value
 	return b
 }

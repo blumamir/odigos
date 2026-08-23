@@ -108,4 +108,5 @@ enum DesiredConditionActionItemType {
   RolloutWorkload
   AllowConcurrentAgentsForContainer
   DisallowConcurrentAgentsForContainer
+  RecoverFromStepDown
 }

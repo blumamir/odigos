@@ -2131,17 +2131,19 @@ const (
 	DesiredConditionActionItemTypeRolloutWorkload                      DesiredConditionActionItemType = "RolloutWorkload"
 	DesiredConditionActionItemTypeAllowConcurrentAgentsForContainer    DesiredConditionActionItemType = "AllowConcurrentAgentsForContainer"
 	DesiredConditionActionItemTypeDisallowConcurrentAgentsForContainer DesiredConditionActionItemType = "DisallowConcurrentAgentsForContainer"
+	DesiredConditionActionItemTypeRecoverFromStepDown                  DesiredConditionActionItemType = "RecoverFromStepDown"
 )
 
 var AllDesiredConditionActionItemType = []DesiredConditionActionItemType{
 	DesiredConditionActionItemTypeRolloutWorkload,
 	DesiredConditionActionItemTypeAllowConcurrentAgentsForContainer,
 	DesiredConditionActionItemTypeDisallowConcurrentAgentsForContainer,
+	DesiredConditionActionItemTypeRecoverFromStepDown,
 }
 
 func (e DesiredConditionActionItemType) IsValid() bool {
 	switch e {
-	case DesiredConditionActionItemTypeRolloutWorkload, DesiredConditionActionItemTypeAllowConcurrentAgentsForContainer, DesiredConditionActionItemTypeDisallowConcurrentAgentsForContainer:
+	case DesiredConditionActionItemTypeRolloutWorkload, DesiredConditionActionItemTypeAllowConcurrentAgentsForContainer, DesiredConditionActionItemTypeDisallowConcurrentAgentsForContainer, DesiredConditionActionItemTypeRecoverFromStepDown:
 		return true
 	}
 	return false

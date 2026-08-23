@@ -177,24 +177,34 @@ spec:
       agent injection. This reason is shown instead of a waiting spinner so the UI can
       treat the state as inactive until pods appear.
 
-  - name: "CrashLoopBackOff"
-    title: "CrashLoopBackOff Rollback"
+  - name: "UnhealthyAfterInstrumentation"
+    title: "Stepped Down: Unhealthy After Instrumentation"
     k8sConditionStatus: "False"
     odigosSeverity: "Notice"
-    summary: "Agent injection was rolled back because pods entered CrashLoopBackOff after the agent was enabled."
-    message: "pods entered CrashLoopBackOff; instrumentation disabled"
+    summary: "Odigos stepped down from instrumentation after the post-instrument health monitor detected unhealthy pods."
+    message: "post-instrument health check failed; instrumentation stepped down"
     description: |
-      After instrumentation was applied, pods entered CrashLoopBackOff.
-      Odigos disabled agent injection for this source to restore stability.
-      Investigate the pod failures, then recover from rollback when ready to retry.
+      After the grace period, a container marked for Odigos agent injection was observed
+      as unhealthy. The post-instrument health monitor recorded an unhealthy result and
+      Odigos stepped down from instrumentation, disabling agent injection to protect the
+      application. Review the pod status before recovering from the step down and
+      retrying instrumentation.
+    actionItems:
+    - type: "RecoverFromStepDown"
+      buttonText: "Retry Instrumentation"
 
-  - name: "ImagePullBackOff"
-    title: "ImagePullBackOff Rollback"
+  - name: "InitContainerImagePullError"
+    title: "Instrumentation Stepped Down (Odigos Init Container Image Pull Error)"
     k8sConditionStatus: "False"
     odigosSeverity: "Notice"
-    summary: "Agent injection was rolled back because pods entered ImagePullBackOff after the agent was enabled."
-    message: "pods entered ImagePullBackOff; instrumentation disabled"
+    summary: "Odigos stepped down from instrumentation after the post-instrument health monitor could not pull the Odigos agents init container image."
+    message: "odigos init container image pull failed; instrumentation stepped down"
     description: |
-      After instrumentation was applied, pods entered ImagePullBackOff.
-      Odigos disabled agent injection for this source to restore stability.
-      Fix the image pull issue, then recover from rollback when ready to retry.
+      The Odigos agents init container could not pull its image. The post-instrument
+      health monitor treats this as unhealthy immediately (without waiting for grace
+      time), recorded an unhealthy result, and Odigos stepped down from instrumentation
+      by disabling agent injection. Fix the image pull issue before recovering from
+      the step down and retrying instrumentation.
+    actionItems:
+    - type: "RecoverFromStepDown"
+      buttonText: "Retry Instrumentation"

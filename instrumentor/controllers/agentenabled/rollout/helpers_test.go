@@ -151,14 +151,6 @@ func assertTriggeredRolloutWithRequeue(t *testing.T, rolloutResult rollout.Rollo
 	assert.NotEqual(t, reconcile.Result{}, rolloutResult.Result, "expected requeue after rollout")
 }
 
-func assertTriggeredRollback(t *testing.T, rolloutResult rollout.RolloutResult, err error, ic *odigosv1alpha1.InstrumentationConfig) {
-	t.Helper()
-	assert.NoError(t, err)
-	assert.True(t, rolloutResult.StatusChanged, "expected status change after rollback")
-	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, rolloutResult.Result)
-	assert.True(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be true")
-	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
-}
 
 // ****************
 // Mock helpers

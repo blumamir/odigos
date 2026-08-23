@@ -27,8 +27,8 @@ spec:
   agentInjectionEnabled: false
   containers:
   - agentEnabled: false
-    agentEnabledMessage: Pods entered CrashLoopBackOff; instrumentation disabled
-    agentEnabledReason: CrashLoopBackOff
+    agentEnabledMessage: post-instrument health check failed; instrumentation stepped down
+    agentEnabledReason: UnhealthyAfterInstrumentation
     containerName: api
     otelDistroName: nodejs-community
   serviceName: otel-crash-demo

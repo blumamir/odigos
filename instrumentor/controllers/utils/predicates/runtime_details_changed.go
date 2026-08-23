@@ -1,6 +1,7 @@
 package predicates
 
 import (
+	"reflect"
 	"slices"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -141,5 +142,54 @@ func (i ContainerOverridesChangedPredicate) Delete(e event.DeleteEvent) bool {
 }
 
 func (i ContainerOverridesChangedPredicate) Generic(e event.GenericEvent) bool {
+	return false
+}
+
+type PostInstrumentHealthMonitorChangedPredicate struct{}
+
+var _ predicate.Predicate = &PostInstrumentHealthMonitorChangedPredicate{}
+
+func postInstrumentHealthMonitorEqual(a, b *odigosv1.PostInstrumentHealthMonitor) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return reflect.DeepEqual(*a, *b)
+}
+
+func (p PostInstrumentHealthMonitorChangedPredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
+
+	ic, ok := e.Object.(*odigosv1.InstrumentationConfig)
+	if !ok {
+		return false
+	}
+
+	return ic.Spec.PostInstrumentHealthMonitor != nil
+}
+
+func (p PostInstrumentHealthMonitorChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+
+	oldIc, oldOk := e.ObjectOld.(*odigosv1.InstrumentationConfig)
+	newIc, newOk := e.ObjectNew.(*odigosv1.InstrumentationConfig)
+	if !oldOk || !newOk {
+		return false
+	}
+
+	return !postInstrumentHealthMonitorEqual(oldIc.Spec.PostInstrumentHealthMonitor, newIc.Spec.PostInstrumentHealthMonitor)
+}
+
+func (p PostInstrumentHealthMonitorChangedPredicate) Delete(e event.DeleteEvent) bool {
+	return false
+}
+
+func (p PostInstrumentHealthMonitorChangedPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }

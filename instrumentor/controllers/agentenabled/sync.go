@@ -25,6 +25,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"github.com/odigos-io/odigos/status"
 	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -157,20 +158,13 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		return nil, err
 	}
 
-	// Check for workloads that are in backoff state and not eligible for instrumentation.
-	backoffCondition, err := hasUninstrumentedPodsWithBackoff(ctx, c, pw, ic, logger)
-	if err != nil {
-		return nil, err
-	}
-	if backoffCondition != nil {
-		// Set the WorkloadRollout condition
-		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-			Type:    odigosv1.WorkloadRolloutStatusConditionType,
-			Status:  metav1.ConditionFalse,
-			Reason:  string(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff),
-			Message: "Workload has pods in backoff state - not eligible for instrumentation",
-		})
-		return backoffCondition, nil
+	if stepDownCondition, steppedDown := postInstrumentHealthMonitorStepDownCondition(ic); steppedDown {
+		logger.Info("=============== Stepping down from instrumentation", "reason", stepDownCondition.Reason, "message", stepDownCondition.Message)
+		ic.Spec.AgentInjectionEnabled = false
+		ic.Spec.PodManifestInjectionOptional = false
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
+		ic.Spec.Containers = applyStepDownToContainers(ic.Spec.Containers, stepDownCondition.Reason, stepDownCondition.Message)
+		return stepDownCondition, nil
 	}
 
 	// check if we are waiting for some transient prerequisites to be completed before injecting the agent
@@ -192,36 +186,6 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 
 	defaultDistrosPerLanguage := distroProvider.GetDefaultDistroNames()
 
-	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff or ImagePullBackOff we'd like to stop
-	// instrumentating it and to disable future instrumentation of this service.
-	// Recovery from rollback is already handled in reconcileWorkload before this function is called.
-	rollbackOccurred := ic.Status.RollbackOccurred
-	// Get existing backoff reason from status conditions if available
-	crashLoopReason := odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff)
-	imagePullReason := odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonImagePullBackOff)
-	var existingBackoffReason odigosv1.AgentEnabledReason
-	for _, condition := range ic.Status.Conditions {
-		if condition.Type == agentInjectionEnabled.AgentEnabledType {
-			reason := odigosv1.AgentEnabledReason(condition.Reason)
-			if reason == crashLoopReason || reason == imagePullReason {
-				existingBackoffReason = reason
-				break
-			}
-		}
-	}
-	// If not found in conditions, check existing container configs
-	if existingBackoffReason == "" {
-		for _, container := range ic.Spec.Containers {
-			if container.AgentEnabledReason == crashLoopReason || container.AgentEnabledReason == imagePullReason {
-				existingBackoffReason = container.AgentEnabledReason
-				break
-			}
-		}
-	}
-	// If not found in containers and we are in rollback state, default to CrashLoopBackOff
-	if rollbackOccurred && existingBackoffReason == "" {
-		existingBackoffReason = crashLoopReason
-	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	collectorConfigs := make([]commonapi.ContainerCollectorConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
@@ -294,7 +258,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 
 		allowConcurrentAgents := resolveAllowConcurrentAgents(effectiveConfig, containerOverride)
-		agentConfig := calculateContainerAgentConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, rollbackOccurred, existingBackoffReason, allowConcurrentAgents)
+		agentConfig := calculateContainerAgentConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, allowConcurrentAgents)
 		// add the dynamic agent configs to enabled agents
 		if agentConfig.AgentEnabled {
 			agentConfig.Traces = dynamicContainerConfigs.AgentTracesConfig
@@ -342,7 +306,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	if len(instrumentedContainerNames) > 0 {
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
-		ic.Spec.AgentInjectionEnabled = !rollbackOccurred
+		ic.Spec.AgentInjectionEnabled = true
 		ic.Spec.PodManifestInjectionOptional = ic.Spec.AgentInjectionEnabled && podManifestInjectionOptional
 		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
@@ -364,31 +328,56 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 }
 
-// hasUninstrumentedPodsWithBackoff checks if the workload has pods in backoff state before instrumentation.
-func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, logger *commonlogger.ContextLogger) (*agentInjectedStatusCondition, error) {
-	// CronJob and Job workloads don't have a label selector like Deployments/StatefulSets/DaemonSets,
-	// so we skip the backoff check for them. Their pods are managed differently through the Job controller.
-	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
-		return nil, nil
+func agentEnabledStatusFromPostInstrumentHealthMonitor(monitor *odigosv1.PostInstrumentHealthMonitor) (status.Reason, odigosv1.AgentEnabledReason, bool) {
+	if monitor == nil || monitor.HealthCheckResult == nil || *monitor.HealthCheckResult {
+		return status.Reason{}, "", false
 	}
 
-	workloadClientObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
-	if getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadClientObj); getErr == nil {
-		hasPodInBackoff, backoffErr := rollout.WorkloadHasNonInstrumentedPodInBackoff(ctx, c, workloadClientObj)
-		if backoffErr != nil {
-			logger.Debug("failed to check for pods in backoff", "err", backoffErr, "workload", pw.Name, "namespace", pw.Namespace)
-			return nil, fmt.Errorf("failed to check for pods in backoff: %w", backoffErr)
-		}
-		if hasPodInBackoff {
-			logger.Debug("workload has pods in backoff state", "workload", pw.Name, "namespace", pw.Namespace)
-			return &agentInjectedStatusCondition{
-				Status:  agentInjectionEnabled.AgentEnabledCrashLoopBackOff.K8sConditionStatus,
-				Reason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff),
-				Message: "Workload has pods in backoff state before instrumentation - cannot instrument crashlooping workload",
-			}, nil
-		}
+	switch monitor.UnhealthyReason {
+	case odigosv1.PostInstrumentHealthUnhealthyReasonOdigosInitContainerImagePullError:
+		return agentInjectionEnabled.AgentEnabledInitContainerImagePullError,
+			odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInitContainerImagePullError),
+			true
+	case odigosv1.PostInstrumentHealthUnhealthyReasonUnhealthyAfterInstrumentation:
+		return agentInjectionEnabled.AgentEnabledUnhealthyAfterInstrumentation,
+			odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonUnhealthyAfterInstrumentation),
+			true
+	default:
+		return status.Reason{}, "", false
 	}
-	return nil, nil
+}
+
+func postInstrumentHealthMonitorStepDownCondition(ic *odigosv1.InstrumentationConfig) (*agentInjectedStatusCondition, bool) {
+	statusReason, agentEnabledReason, ok := agentEnabledStatusFromPostInstrumentHealthMonitor(ic.Spec.PostInstrumentHealthMonitor)
+	if !ok {
+		return nil, false
+	}
+
+	message, err := status.RenderMessage(statusReason, struct{}{})
+	if err != nil {
+		message = statusReason.Message
+	}
+
+	return &agentInjectedStatusCondition{
+		Status:  statusReason.K8sConditionStatus,
+		Reason:  agentEnabledReason,
+		Message: message,
+	}, true
+}
+
+func applyStepDownToContainers(containers []odigosv1.ContainerAgentConfig, reason odigosv1.AgentEnabledReason, message string) []odigosv1.ContainerAgentConfig {
+	if len(containers) == 0 {
+		return containers
+	}
+
+	result := make([]odigosv1.ContainerAgentConfig, len(containers))
+	for i, container := range containers {
+		container.AgentEnabled = false
+		container.AgentEnabledReason = reason
+		container.AgentEnabledMessage = message
+		result[i] = container
+	}
+	return result
 }
 
 func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentConfig) *agentInjectedStatusCondition {
@@ -514,8 +503,6 @@ func calculateContainerAgentConfig(containerName string,
 	d *distro.OtelDistro,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
-	rollbackOccurred bool,
-	existingBackoffReason odigosv1.AgentEnabledReason,
 	allowConcurrentAgents bool,
 ) odigosv1.ContainerAgentConfig {
 
@@ -536,18 +523,6 @@ func calculateContainerAgentConfig(containerName string,
 	distroParameters, err := calculateDistroParams(d, runtimeDetails, envInjectionDecision)
 	if err != nil {
 		return *err
-	}
-
-	if rollbackOccurred {
-		message := fmt.Sprintf("Pods entered %s; instrumentation disabled", existingBackoffReason)
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:       containerName,
-			AgentEnabled:        false,
-			AgentEnabledReason:  existingBackoffReason,
-			AgentEnabledMessage: message,
-			OtelDistroName:      distroName,
-			DistroParams:        distroParameters,
-		}
 	}
 
 	podManifestInjectionOptional := !distro.IsRestartRequired(d, effectiveConfig)

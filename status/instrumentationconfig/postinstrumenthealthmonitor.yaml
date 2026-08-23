@@ -1,0 +1,163 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Status
+metadata:
+  name: post-instrument-health-monitor
+  ownerResource: instrumentationconfig
+  scope: source
+  component: instrumentor
+spec:
+  type: 'PostInstrumentHealthMonitor'
+
+  # Parameters available when rendering reason state messages.
+  # Messages may use Go text/template syntax (e.g. {{ .StabilityWindow }}).
+  # Callers are expected to supply these values at runtime when presenting the message.
+  parameters:
+  - name: GracePeriod
+    description: |
+      The configured auto-rollback grace period duration (for example 5m).
+      CrashLoopBackOff rollback is not evaluated until this period ends after the
+      first instrumented pod start time.
+  - name: StabilityWindow
+    description: |
+      The configured auto-rollback stability window duration (for example 1h).
+      Used while the monitor is evaluating pod health after the grace period.
+
+  docs:
+    title: "Post Instrument Health Monitor"
+    summary: "Reports the result of monitoring instrumented pods for stability after the Odigos agent is applied."
+    description: |
+      After Odigos enables the instrumentation agent for a source, it can watch pods
+      for a limited time window and decide whether instrumentation appears stable.
+
+      Monitoring runs only when auto-rollback is enabled and at least one container
+      has the agent enabled. Pods are considered once they are past the configured
+      grace time (CrashLoopBackOff checks) and carry the expected agent injection
+      (or, when pod manifest injection is optional, once the agents meta hash change
+      time has passed). ImagePullBackOff on the Odigos init container is treated as
+      unhealthy immediately, without waiting for grace time.
+
+      While the stability window is open, the monitor records the first instrumented
+      pod start time and keeps evaluating. If an unhealthy condition is observed,
+      the health check fails and typically triggers an auto-rollback (step down) that
+      disables agent injection. If the window ends without failures, the health check
+      succeeds. A completed result is not re-evaluated until monitoring starts again.
+
+  reasons:
+
+  - name: "NoPods"
+    title: "No Pods to Monitor"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Irrelevant"
+    summary: "There are no non-completed pods for this source, so post-instrument health cannot be evaluated yet."
+    message: "no running pods available to evaluate post-instrument health"
+    description: |
+      The monitor lists non-completed pods for the workload. When none exist, there
+      is no pod health to observe. Once pods appear, monitoring can record the first
+      instrumented pod start time and begin the stability window.
+
+  - name: "WaitingForInstrumentedPods"
+    title: "Waiting for Instrumented Pods"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "Monitoring is enabled, but no applicable instrumented pod has started the stability window yet."
+    message: "waiting for instrumented pods to start before evaluating stability"
+    description: |
+      Auto-rollback monitoring is active for this source, but no pod has yet been
+      accepted as the start of the stability window. Pods may still be starting, may
+      not yet carry the current agents meta hash, or may still be within grace time
+      for agent-start accounting. The first applicable agent start time becomes
+      FirstInstrumentedPodStartTime when observed.
+
+  - name: "InGracePeriod"
+    title: "In Grace Period"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "Instrumented pods are within the post-instrumentation grace period; CrashLoopBackOff rollback is not active yet."
+    message: "waiting for instrumented pods to complete the {{ .GracePeriod }} grace period before evaluating stability"
+    description: |
+      At least one instrumented pod start time has been recorded, but no
+      instrumented pod has completed the grace period yet. Odigos watches for
+      ImagePullBackOff on the Odigos init container immediately, but
+      CrashLoopBackOff on agent-enabled containers is not evaluated until the
+      grace period ends. Auto-rollback (step down) for crash loops cannot occur
+      in this state.
+
+  - name: "Evaluating"
+    title: "Evaluating Stability"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "Instrumented pods passed the grace period and are being watched during the stability window."
+    message: "evaluating pods stability for {{ .StabilityWindow }}"
+    description: |
+      At least one instrumented pod has completed the grace period and appears
+      healthy. The stability window has not ended yet. Odigos continues to watch
+      for CrashLoopBackOff on agent-enabled containers and ImagePullBackOff on
+      the Odigos init container. No final health check result has been written yet.
+
+  - name: "NoInstrumentedPods"
+    title: "No Instrumented Pods"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "Monitoring is active, but no instrumented pods are currently available to evaluate."
+    message: "monitoring is active but no instrumented pods are currently available to evaluate post-instrument health"
+    description: |
+      The stability window has started, but none of the current non-completed pods
+      are instrumented with the expected Odigos agent. Pods may have been replaced
+      during a rollout and new instrumented pods have not appeared yet. The monitor
+      keeps the recorded FirstInstrumentedPodStartTime and continues until the
+      stability window ends or instrumented pods become available again.
+
+  - name: "Stable"
+    title: "Instrumentation Stable"
+    k8sConditionStatus: "True"
+    odigosSeverity: "Success"
+    summary: "The stability window ended without detected post-instrument health failures."
+    message: "pods are stable after instrumentation"
+    description: |
+      The post-instrument health monitor completed successfully. Either the stability
+      window ended with no CrashLoopBackOff or ImagePullBackOff failures, or an
+      equivalent healthy result was recorded. Instrumentation remains enabled based
+      on this check.
+
+  - name: "Unhealthy"
+    title: "Unhealthy After Instrumentation"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    summary: "An agent-enabled container became unhealthy after instrumentation; the health check failed."
+    message: "pod unhealthy after instrumentation"
+    description: |
+      After the grace time, a container marked for Odigos agent injection was observed
+      as unhealthy. The post-instrument health check result is unhealthy.
+      This typically triggers an auto-rollback (step down) so agent injection is
+      disabled to protect the application. Investigate the pod failures before
+      recovering from the step down and retrying instrumentation.
+    actionItems:
+    - type: "RecoverFromStepDown"
+      buttonText: "Retry Instrumentation"
+
+  - name: "ImagePullBackOff"
+    title: "ImagePullBackOff Detected"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    summary: "The Odigos agents init container entered ImagePullBackOff; the health check failed."
+    message: "odigos init container entered ImagePullBackOff after instrumentation"
+    description: |
+      The Odigos agents init container was observed in ImagePullBackOff. This is
+      treated as unhealthy immediately (without waiting for grace time). The
+      post-instrument health check result is unhealthy and typically triggers an
+      auto-rollback (step down). Fix the image pull issue before recovering from
+      the step down and retrying instrumentation.
+    actionItems:
+    - type: "RecoverFromStepDown"
+      buttonText: "Retry Instrumentation"
+
+  - name: "NotApplicable"
+    title: "Monitoring Not Applicable"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Irrelevant"
+    summary: "Post-instrument health monitoring is not active for this source."
+    message: "post-instrument health monitoring is not active for this source"
+    description: |
+      The post-instrument health monitor condition is absent because monitoring does
+      not apply. This happens when auto-rollback is disabled, no container has the
+      agent enabled, or the source is otherwise outside the monitor's scope.

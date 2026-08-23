@@ -317,6 +317,8 @@ func actionItemTypeConst(actionType status.ActionItemType) string {
 		return "status.ActionItemTypeAllowConcurrentAgentsForContainer"
 	case status.ActionItemTypeDisallowConcurrentAgentsForContainer:
 		return "status.ActionItemTypeDisallowConcurrentAgentsForContainer"
+	case status.ActionItemTypeRecoverFromStepDown:
+		return "status.ActionItemTypeRecoverFromStepDown"
 	default:
 		fatal(fmt.Errorf("unknown action item type %q", actionType))
 		return ""

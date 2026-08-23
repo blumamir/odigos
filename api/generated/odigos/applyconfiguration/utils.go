@@ -99,6 +99,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.OtherAgentApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("PodsManifestInjectionStatus"):
 		return &odigosv1alpha1.PodsManifestInjectionStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PostInstrumentHealthMonitor"):
+		return &odigosv1alpha1.PostInstrumentHealthMonitorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Processor"):
 		return &odigosv1alpha1.ProcessorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProcessorSpec"):

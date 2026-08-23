@@ -2,7 +2,6 @@ package rollout
 
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -82,31 +81,5 @@ func newConditionFailedToPatch(err error) metav1.Condition {
 		Status:  metav1.ConditionFalse,
 		Reason:  string(odigosv1alpha1.WorkloadRolloutReasonFailedToPatch),
 		Message: err.Error(),
-	}
-}
-
-// NewConditionTriggeredWithMessage creates a triggered successfully condition with a custom message.
-// Used for rollback scenarios where the message contains backoff details.
-func newConditionTriggeredWithMessage(message string) metav1.Condition {
-	return metav1.Condition{
-		Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully),
-		Message: message,
-	}
-}
-
-// NewConditionAgentDisabledDueToBackoff creates a condition for when agents are disabled due to pod backoff.
-// Used when pods enter CrashLoopBackOff or ImagePullBackOff and automatic rollback is triggered.
-func newConditionAgentDisabledDueToBackoff(reason odigosv1alpha1.AgentEnabledReason, message string) metav1.Condition {
-	status := metav1.ConditionFalse
-	if r, ok := agentInjectionEnabled.AgentEnabledReasonByName(string(reason)); ok {
-		status = r.K8sConditionStatus
-	}
-	return metav1.Condition{
-		Type:    agentInjectionEnabled.AgentEnabledType,
-		Status:  status,
-		Reason:  string(reason),
-		Message: message,
 	}
 }

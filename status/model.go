@@ -78,4 +78,5 @@ const (
 	ActionItemTypeRolloutWorkload                      ActionItemType = "RolloutWorkload"
 	ActionItemTypeAllowConcurrentAgentsForContainer    ActionItemType = "AllowConcurrentAgentsForContainer"
 	ActionItemTypeDisallowConcurrentAgentsForContainer ActionItemType = "DisallowConcurrentAgentsForContainer"
+	ActionItemTypeRecoverFromStepDown                  ActionItemType = "RecoverFromStepDown"
 )

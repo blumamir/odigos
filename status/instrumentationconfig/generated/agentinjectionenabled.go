@@ -36,8 +36,8 @@ const (
 	AgentEnabledReasonMissingDistroParameter         AgentEnabledReason = "MissingDistroParameter"
 	AgentEnabledReasonOtherAgentDetected             AgentEnabledReason = "OtherAgentDetected"
 	AgentEnabledReasonRuntimeDetailsUnavailable      AgentEnabledReason = "RuntimeDetailsUnavailable"
-	AgentEnabledReasonCrashLoopBackOff               AgentEnabledReason = "CrashLoopBackOff"
-	AgentEnabledReasonImagePullBackOff               AgentEnabledReason = "ImagePullBackOff"
+	AgentEnabledReasonUnhealthyAfterInstrumentation  AgentEnabledReason = "UnhealthyAfterInstrumentation"
+	AgentEnabledReasonInitContainerImagePullError    AgentEnabledReason = "InitContainerImagePullError"
 )
 
 var (
@@ -170,23 +170,35 @@ var (
 		K8sConditionStatus: metav1.ConditionUnknown,
 		OdigosSeverity:     status.OdigosSeverityIrrelevant,
 	})
-	AgentEnabledCrashLoopBackOff = status.WithMessageTemplate(status.Reason{
-		Name:               string(AgentEnabledReasonCrashLoopBackOff),
-		Title:              "CrashLoopBackOff Rollback",
-		Summary:            "Agent injection was rolled back because pods entered CrashLoopBackOff after the agent was enabled.",
-		Description:        "After instrumentation was applied, pods entered CrashLoopBackOff.\nOdigos disabled agent injection for this source to restore stability.\nInvestigate the pod failures, then recover from rollback when ready to retry.\n",
-		Message:            "pods entered CrashLoopBackOff; instrumentation disabled",
+	AgentEnabledUnhealthyAfterInstrumentation = status.WithMessageTemplate(status.Reason{
+		Name:               string(AgentEnabledReasonUnhealthyAfterInstrumentation),
+		Title:              "Stepped Down: Unhealthy After Instrumentation",
+		Summary:            "Odigos stepped down from instrumentation after the post-instrument health monitor detected unhealthy pods.",
+		Description:        "After the grace period, a container marked for Odigos agent injection was observed\nas unhealthy. The post-instrument health monitor recorded an unhealthy result and\nOdigos stepped down from instrumentation, disabling agent injection to protect the\napplication. Review the pod status before recovering from the step down and\nretrying instrumentation.\n",
+		Message:            "post-instrument health check failed; instrumentation stepped down",
 		K8sConditionStatus: metav1.ConditionFalse,
 		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRecoverFromStepDown,
+				ButtonText: "Retry Instrumentation",
+			},
+		},
 	})
-	AgentEnabledImagePullBackOff = status.WithMessageTemplate(status.Reason{
-		Name:               string(AgentEnabledReasonImagePullBackOff),
-		Title:              "ImagePullBackOff Rollback",
-		Summary:            "Agent injection was rolled back because pods entered ImagePullBackOff after the agent was enabled.",
-		Description:        "After instrumentation was applied, pods entered ImagePullBackOff.\nOdigos disabled agent injection for this source to restore stability.\nFix the image pull issue, then recover from rollback when ready to retry.\n",
-		Message:            "pods entered ImagePullBackOff; instrumentation disabled",
+	AgentEnabledInitContainerImagePullError = status.WithMessageTemplate(status.Reason{
+		Name:               string(AgentEnabledReasonInitContainerImagePullError),
+		Title:              "Instrumentation Stepped Down (Image Pull)",
+		Summary:            "Odigos stepped down from instrumentation after the post-instrument health monitor could not pull the Odigos agents init container image.",
+		Description:        "The Odigos agents init container could not pull its image. The post-instrument\nhealth monitor treats this as unhealthy immediately (without waiting for grace\ntime), recorded an unhealthy result, and Odigos stepped down from instrumentation\nby disabling agent injection. Fix the image pull issue before recovering from\nthe step down and retrying instrumentation.\n",
+		Message:            "odigos init container image pull failed; instrumentation stepped down",
 		K8sConditionStatus: metav1.ConditionFalse,
 		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRecoverFromStepDown,
+				ButtonText: "Retry Instrumentation",
+			},
+		},
 	})
 
 	AgentEnabledByReason = map[string]status.Reason{
@@ -203,8 +215,8 @@ var (
 		string(AgentEnabledReasonMissingDistroParameter):         AgentEnabledMissingDistroParameter,
 		string(AgentEnabledReasonOtherAgentDetected):             AgentEnabledOtherAgentDetected,
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):      AgentEnabledRuntimeDetailsUnavailable,
-		string(AgentEnabledReasonCrashLoopBackOff):               AgentEnabledCrashLoopBackOff,
-		string(AgentEnabledReasonImagePullBackOff):               AgentEnabledImagePullBackOff,
+		string(AgentEnabledReasonUnhealthyAfterInstrumentation):  AgentEnabledUnhealthyAfterInstrumentation,
+		string(AgentEnabledReasonInitContainerImagePullError):    AgentEnabledInitContainerImagePullError,
 	}
 )
 

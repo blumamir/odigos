@@ -125,11 +125,11 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	conditions := []*model.DesiredConditionStatus{}
 	if ic != nil {
-		autoRollbackConfig := l.GetAutoRollbackConfig()
-
 		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
 		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
-		conditions = append(conditions, status.CalculateAutoRollbackStatus(ic, autoRollbackConfig))
+		// The auto-rollback / post-instrument health monitor status is intentionally not accounted for here.
+		// If it's waiting or evaluating, we don't want to report it on the source (not interesting to users),
+		// and if it failed, the agent injection will reconcile to report that fact.
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
 		conditions = append(conditions, &model.DesiredConditionStatus{
@@ -204,13 +204,11 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 		return nil, err
 	}
 
-	autoRollbackConfig := l.GetAutoRollbackConfig()
-
 	runtimeDetection := status.CalculateRuntimeInspectionStatus(ic)
 	agentInjectionEnabled := status.CalculateAgentInjectionEnabledStatus(ic)
 	rollout := status.CalculateRolloutStatus(ic)
 	podsManifestInjection := status.CalculatePodsManifestInjectionStatus(ic, pods)
-	autoRollback := status.CalculateAutoRollbackStatus(ic, autoRollbackConfig)
+	autoRollback := status.CalculateAutoRollbackStatus(ic)
 	agentInjected := status.CalculateAgentInjectedStatus(ic, pods)
 	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
 	processesAgentHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID, containerNamesWithOptionalPodManifestInjection)
@@ -381,8 +379,7 @@ func (r *k8sWorkloadResolver) AutoRollback(ctx context.Context, obj *model.K8sWo
 		return nil, err
 	}
 
-	autoRollbackConfig := l.GetAutoRollbackConfig()
-	autoRollbackStatus := status.CalculateAutoRollbackStatus(ic, autoRollbackConfig)
+	autoRollbackStatus := status.CalculateAutoRollbackStatus(ic)
 
 	return &model.K8sWorkloadAutoRollback{
 		AutoRollbackStatus: autoRollbackStatus,

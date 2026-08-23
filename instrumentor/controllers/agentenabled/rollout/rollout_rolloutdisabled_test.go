@@ -45,41 +45,6 @@ func Test_NoRollout_ICNil_AutomaticRolloutDisabled(t *testing.T) {
 	assertNoStatusChange(t, rolloutResult, err)
 	assertWorkloadNotRestarted(t, s.ctx, fakeClient, pw)
 }
-func Test_NoRollout_InvalidRollbackGraceTime(t *testing.T) {
-	// Arrange: Config has invalid RollbackGraceTime string that can't be parsed as duration
-	s := newTestSetup()
-	s.conf.RollbackGraceTime = "invalid"
-	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
-	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
-	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
-
-	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
-
-	// Act
-	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
-
-	// Assert: Error returned - invalid config prevents rollout
-	assertErrorNoStatusChange(t, rolloutResult, err)
-}
-
-func Test_NoRollout_InvalidRollbackStabilityWindow(t *testing.T) {
-	// Arrange: Config has invalid RollbackStabilityWindow string that can't be parsed as duration
-	s := newTestSetup()
-	s.conf.RollbackStabilityWindow = "invalid"
-	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
-	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
-	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
-
-	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
-
-	// Act
-	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
-
-	// Assert: Error returned - invalid config prevents rollout
-	assertErrorNoStatusChange(t, rolloutResult, err)
-}
 
 func Test_TriggeredRollout_ConfigNil(t *testing.T) {
 	// Arrange: IC requires rollout and s.conf.Rollout is nil (default config allows automatic rollout)

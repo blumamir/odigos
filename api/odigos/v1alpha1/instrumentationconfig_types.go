@@ -77,7 +77,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;EnabledWithOtherAgents;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;EnabledWithOtherAgents;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;UnhealthyAfterInstrumentation;InitContainerImagePullError
 type AgentEnabledReason string
 
 const (
@@ -96,12 +96,10 @@ const (
 	// if the source cannot be instrumented because there are no running pods,
 	// we want to show this reason to the user so it's not a spinner
 	AgentEnabledReasonRuntimeDetailsUnavailable AgentEnabledReason = "RuntimeDetailsUnavailable"
-	// used for the rollback feature, when an application was instrumented and it caused a CrashLoopBackOff
-	// We're marking it as that and rolling back the instrumentation
-	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
-	// used for the rollback feature, when an application was instrumented and it caused an ImagePullBackOff
-	// We're marking it as that and rolling back the instrumentation
-	AgentEnabledReasonImagePullBackOff AgentEnabledReason = "ImagePullBackOff"
+	// used when the post-instrument health monitor detected unhealthy instrumented containers and stepped down
+	AgentEnabledReasonUnhealthyAfterInstrumentation AgentEnabledReason = "UnhealthyAfterInstrumentation"
+	// used when the post-instrument health monitor detected an Odigos init container image pull error and stepped down
+	AgentEnabledReasonInitContainerImagePullError AgentEnabledReason = "InitContainerImagePullError"
 )
 
 // Used to return that an agent should be disabled for a container.
@@ -161,7 +159,7 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 80
 	case AgentEnabledReasonOtherAgentDetected:
 		return 90
-	case AgentEnabledReasonCrashLoopBackOff, AgentEnabledReasonImagePullBackOff:
+	case AgentEnabledReasonUnhealthyAfterInstrumentation, AgentEnabledReasonInitContainerImagePullError:
 		return 95
 	default:
 		return 100
@@ -308,6 +306,33 @@ type ContainerAgentConfig struct {
 	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=OdigosInitContainerImagePullError;UnhealthyAfterInstrumentation
+type PostInstrumentHealthUnhealthyReason string
+
+const (
+	// The Odigos agents init container entered ImagePullBackOff.
+	PostInstrumentHealthUnhealthyReasonOdigosInitContainerImagePullError PostInstrumentHealthUnhealthyReason = "OdigosInitContainerImagePullError"
+	// An agent-enabled container became unhealthy after instrumentation.
+	PostInstrumentHealthUnhealthyReasonUnhealthyAfterInstrumentation PostInstrumentHealthUnhealthyReason = "UnhealthyAfterInstrumentation"
+)
+
+type PostInstrumentHealthMonitor struct {
+
+	// Once the post instrument health check is completed, the result is stored here.
+	// nil means that the health check is not yet completed.
+	HealthCheckResult *bool `json:"healthCheckResult,omitempty"`
+
+	// Set only when HealthCheckResult is false. Describes why the health check failed.
+	// +optional
+	UnhealthyReason PostInstrumentHealthUnhealthyReason `json:"unhealthyReason,omitempty"`
+
+	// This is the time when we observed the first pod running with the odigos agent injected.
+	// The post instrument health monitor is time based, and monitor health only for pods within a time window.
+	// FirstInstrumentedPodStartTime is the time when we observed the first pod running with the odigos agent injected (start of time window)
+	// When pod manifest injection is optional, this time is accounted correctly.
+	FirstInstrumentedPodStartTime *metav1.Time `json:"firstInstrumentedPodStartTime,omitempty"`
+}
+
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
 // The workload is identified by the owner reference
 type InstrumentationConfigSpec struct {
@@ -345,6 +370,10 @@ type InstrumentationConfigSpec struct {
 	// Pods created before this time may not be in alignment with the AgentsMetaHash.
 	// e.g. can lack the odigos label, or have a different value.
 	AgentsMetaHashChangedTime *metav1.Time `json:"agentsMetaHashChangedTime,omitempty"`
+
+	// The post instrument health monitor tracking for the workload.
+	// nil when the source has no agent injection enabled and thus not instrumented by odigos.
+	PostInstrumentHealthMonitor *PostInstrumentHealthMonitor `json:"postInstrumentHealthMonitor,omitempty"`
 }
 
 func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName string) *ContainerAgentConfig {

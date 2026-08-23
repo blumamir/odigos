@@ -1,11 +1,86 @@
 package workload
 
 import (
+	"context"
+	"fmt"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// ListNonCompletedPods returns pods belonging to the given workload,
+// excluding pods in Succeeded or Failed phase.
+func ListNonCompletedPods(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) ([]corev1.Pod, error) {
+	workloadObj := ClientObjectFromWorkloadKind(pw.Kind)
+	if workloadObj == nil {
+		return nil, fmt.Errorf("unsupported workload kind %q", pw.Kind)
+	}
+	err := c.Get(ctx, types.NamespacedName{Namespace: pw.Namespace, Name: pw.Name}, workloadObj)
+	if err != nil {
+		return nil, err
+	}
+
+	var pods []corev1.Pod
+	switch pw.Kind {
+	case k8sconsts.WorkloadKindStaticPod:
+		// Static pods are the workload themselves and have no label selector.
+		pods = []corev1.Pod{*workloadObj.(*corev1.Pod)}
+	case k8sconsts.WorkloadKindCronJob:
+		// CronJobs have no label selector. Their pods are owned by Jobs named
+		// <cronjob-name>-<timestamp>; resolve ownership the same way as ownerreference.go.
+		podList := &corev1.PodList{}
+		err = c.List(ctx, podList, client.InNamespace(pw.Namespace))
+		if err != nil {
+			return nil, err
+		}
+		for i := range podList.Items {
+			pod := &podList.Items[i]
+			for _, owner := range pod.OwnerReferences {
+				if owner.Kind != string(k8sconsts.WorkloadKindJob) {
+					continue
+				}
+				workloadName, workloadKind, err := GetWorkloadNameAndKind(owner.Name, owner.Kind, pod)
+				if err != nil {
+					continue
+				}
+				if workloadKind == k8sconsts.WorkloadKindCronJob && workloadName == pw.Name {
+					pods = append(pods, *pod)
+					break
+				}
+			}
+		}
+	default:
+		genericWorkload, err := ObjectToWorkload(workloadObj)
+		if err != nil {
+			return nil, err
+		}
+
+		labelSelector := genericWorkload.LabelSelector()
+		if labelSelector == nil {
+			return nil, fmt.Errorf("unexpected nil label selector for workload %s/%s kind %s", pw.Namespace, pw.Name, pw.Kind)
+		}
+
+		podList := &corev1.PodList{}
+		err = c.List(ctx, podList, client.InNamespace(pw.Namespace), client.MatchingLabels(labelSelector.MatchLabels))
+		if err != nil {
+			return nil, err
+		}
+		pods = podList.Items
+	}
+
+	nonCompleted := make([]corev1.Pod, 0, len(pods))
+	for _, pod := range pods {
+		if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+			continue
+		}
+		nonCompleted = append(nonCompleted, pod)
+	}
+	return nonCompleted, nil
+}
 
 // IsStaticPod return true whether the pod is static or not
 // https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/
