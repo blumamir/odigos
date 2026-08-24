@@ -3078,6 +3078,17 @@ nil means that the health check is not yet completed.</p>
 </tr>
 <tr>
 <td>
+<code>unhealthyAt</code>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>Set only when HealthCheckResult is false. The time when the workload was first observed as unhealthy.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>firstInstrumentedPodStartTime</code> <B>[Required]</B>
 </td>
 <td>

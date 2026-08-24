@@ -19,8 +19,10 @@ import (
 
 func postInstrumentHealthStateFromPods(pods []corev1.Pod, ic *odigosv1.InstrumentationConfig, rollbackConfig *autoRollbackConfig, now time.Time) (odigosv1.PostInstrumentHealthMonitor, status.Reason) {
 	var firstInstrumentedPodStartTime *metav1.Time
+	var unhealthyAt *metav1.Time
 	if ic.Spec.PostInstrumentHealthMonitor != nil {
 		firstInstrumentedPodStartTime = ic.Spec.PostInstrumentHealthMonitor.FirstInstrumentedPodStartTime
+		unhealthyAt = ic.Spec.PostInstrumentHealthMonitor.UnhealthyAt
 	}
 
 	imagePullBackOff := false
@@ -52,6 +54,7 @@ func postInstrumentHealthStateFromPods(pods []corev1.Pod, ic *odigosv1.Instrumen
 		return odigosv1.PostInstrumentHealthMonitor{
 			HealthCheckResult:             &healthy,
 			UnhealthyReason:               odigosv1.PostInstrumentHealthUnhealthyReasonUnhealthyAfterInstrumentation,
+			UnhealthyAt:                   unhealthyAtTime(unhealthyAt, now),
 			FirstInstrumentedPodStartTime: firstInstrumentedPodStartTime,
 		}, postInstrumentHealthMonitor.PostInstrumentHealthMonitorUnhealthy
 	}
@@ -61,6 +64,7 @@ func postInstrumentHealthStateFromPods(pods []corev1.Pod, ic *odigosv1.Instrumen
 		return odigosv1.PostInstrumentHealthMonitor{
 			HealthCheckResult:             &healthy,
 			UnhealthyReason:               odigosv1.PostInstrumentHealthUnhealthyReasonOdigosInitContainerImagePullError,
+			UnhealthyAt:                   unhealthyAtTime(unhealthyAt, now),
 			FirstInstrumentedPodStartTime: firstInstrumentedPodStartTime,
 		}, postInstrumentHealthMonitor.PostInstrumentHealthMonitorImagePullBackOff
 	}
@@ -122,12 +126,18 @@ func calculatePostInstrumentHealthMonitor(
 	rollbackConfig *autoRollbackConfig,
 ) (*odigosv1.PostInstrumentHealthMonitor, *status.Reason, error) {
 	if !isMonitoringSource(ic, *rollbackConfig) {
+		// if the result is set to unhealthy, we keep it (to denote it)
+		// otherwise we clear it (to denote it's not monitoring)
+		if isUnhealthyHealthCheckResult(ic.Spec.PostInstrumentHealthMonitor) {
+			reason := reasonFromHealthMonitorResult(ic.Spec.PostInstrumentHealthMonitor)
+			return ic.Spec.PostInstrumentHealthMonitor, reason, nil
+		}
 		return nil, nil, nil
 	}
 
 	if isResultSet(ic.Spec.PostInstrumentHealthMonitor) {
 		reason := reasonFromHealthMonitorResult(ic.Spec.PostInstrumentHealthMonitor)
-		return ic.Spec.PostInstrumentHealthMonitor, &reason, nil
+		return ic.Spec.PostInstrumentHealthMonitor, reason, nil
 	}
 
 	now := time.Now()
@@ -139,6 +149,7 @@ func calculatePostInstrumentHealthMonitor(
 		healthy := true
 		desired.HealthCheckResult = &healthy
 		desired.UnhealthyReason = ""
+		desired.UnhealthyAt = nil
 		reason := postInstrumentHealthMonitor.PostInstrumentHealthMonitorStable
 		return desired, &reason, nil
 	}

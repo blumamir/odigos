@@ -1442,6 +1442,10 @@ func (in *PostInstrumentHealthMonitor) DeepCopyInto(out *PostInstrumentHealthMon
 		*out = new(bool)
 		**out = **in
 	}
+	if in.UnhealthyAt != nil {
+		in, out := &in.UnhealthyAt, &out.UnhealthyAt
+		*out = (*in).DeepCopy()
+	}
 	if in.FirstInstrumentedPodStartTime != nil {
 		in, out := &in.FirstInstrumentedPodStartTime, &out.FirstInstrumentedPodStartTime
 		*out = (*in).DeepCopy()

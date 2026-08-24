@@ -30,6 +30,8 @@ type PostInstrumentHealthMonitorApplyConfiguration struct {
 	HealthCheckResult *bool `json:"healthCheckResult,omitempty"`
 	// Set only when HealthCheckResult is false. Describes why the health check failed.
 	UnhealthyReason *odigosv1alpha1.PostInstrumentHealthUnhealthyReason `json:"unhealthyReason,omitempty"`
+	// Set only when HealthCheckResult is false. The time when the workload was first observed as unhealthy.
+	UnhealthyAt *v1.Time `json:"unhealthyAt,omitempty"`
 	// This is the time when we observed the first pod running with the odigos agent injected.
 	// The post instrument health monitor is time based, and monitor health only for pods within a time window.
 	// FirstInstrumentedPodStartTime is the time when we observed the first pod running with the odigos agent injected (start of time window)
@@ -56,6 +58,14 @@ func (b *PostInstrumentHealthMonitorApplyConfiguration) WithHealthCheckResult(va
 // If called multiple times, the UnhealthyReason field is set to the value of the last call.
 func (b *PostInstrumentHealthMonitorApplyConfiguration) WithUnhealthyReason(value odigosv1alpha1.PostInstrumentHealthUnhealthyReason) *PostInstrumentHealthMonitorApplyConfiguration {
 	b.UnhealthyReason = &value
+	return b
+}
+
+// WithUnhealthyAt sets the UnhealthyAt field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UnhealthyAt field is set to the value of the last call.
+func (b *PostInstrumentHealthMonitorApplyConfiguration) WithUnhealthyAt(value v1.Time) *PostInstrumentHealthMonitorApplyConfiguration {
+	b.UnhealthyAt = &value
 	return b
 }
 

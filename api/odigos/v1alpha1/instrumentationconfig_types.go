@@ -326,6 +326,10 @@ type PostInstrumentHealthMonitor struct {
 	// +optional
 	UnhealthyReason PostInstrumentHealthUnhealthyReason `json:"unhealthyReason,omitempty"`
 
+	// Set only when HealthCheckResult is false. The time when the workload was first observed as unhealthy.
+	// +optional
+	UnhealthyAt *metav1.Time `json:"unhealthyAt,omitempty"`
+
 	// This is the time when we observed the first pod running with the odigos agent injected.
 	// The post instrument health monitor is time based, and monitor health only for pods within a time window.
 	// FirstInstrumentedPodStartTime is the time when we observed the first pod running with the odigos agent injected (start of time window)

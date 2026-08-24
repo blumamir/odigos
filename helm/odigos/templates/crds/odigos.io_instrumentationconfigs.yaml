@@ -956,6 +956,11 @@ spec:
                       Once the post instrument health check is completed, the result is stored here.
                       nil means that the health check is not yet completed.
                     type: boolean
+                  unhealthyAt:
+                    description: Set only when HealthCheckResult is false. The time
+                      when the workload was first observed as unhealthy.
+                    format: date-time
+                    type: string
                   unhealthyReason:
                     description: Set only when HealthCheckResult is false. Describes
                       why the health check failed.

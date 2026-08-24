@@ -108,6 +108,12 @@ func isResultSet(postInstrumentHealthMonitor *odigosv1.PostInstrumentHealthMonit
 	return postInstrumentHealthMonitor != nil && postInstrumentHealthMonitor.HealthCheckResult != nil
 }
 
+func isUnhealthyHealthCheckResult(monitor *odigosv1.PostInstrumentHealthMonitor) bool {
+	return monitor != nil &&
+		monitor.HealthCheckResult != nil &&
+		!*monitor.HealthCheckResult
+}
+
 func isStabilityWindowEnded(postInstrumentHealthMonitor *odigosv1.PostInstrumentHealthMonitor, rollbackConfig *autoRollbackConfig, now time.Time) bool {
 	if postInstrumentHealthMonitor == nil {
 		return false
@@ -145,16 +151,27 @@ func isActivelyMonitoring(ic *odigosv1.InstrumentationConfig, rollbackConfig aut
 	return isMonitoringSource(ic, rollbackConfig) && !isResultSet(ic.Spec.PostInstrumentHealthMonitor)
 }
 
-func reasonFromHealthMonitorResult(monitor *odigosv1.PostInstrumentHealthMonitor) status.Reason {
+func unhealthyAtTime(existing *metav1.Time, now time.Time) *metav1.Time {
+	if existing != nil {
+		return existing
+	}
+	t := metav1.NewTime(now)
+	return &t
+}
+
+func reasonFromHealthMonitorResult(monitor *odigosv1.PostInstrumentHealthMonitor) *status.Reason {
 	if monitor.HealthCheckResult != nil && *monitor.HealthCheckResult {
-		return postInstrumentHealthMonitor.PostInstrumentHealthMonitorStable
+		reason := postInstrumentHealthMonitor.PostInstrumentHealthMonitorStable
+		return &reason
 	}
 	switch monitor.UnhealthyReason {
 	case odigosv1.PostInstrumentHealthUnhealthyReasonOdigosInitContainerImagePullError:
-		return postInstrumentHealthMonitor.PostInstrumentHealthMonitorImagePullBackOff
+		reason := postInstrumentHealthMonitor.PostInstrumentHealthMonitorImagePullBackOff
+		return &reason
 	case odigosv1.PostInstrumentHealthUnhealthyReasonUnhealthyAfterInstrumentation:
-		return postInstrumentHealthMonitor.PostInstrumentHealthMonitorUnhealthy
+		reason := postInstrumentHealthMonitor.PostInstrumentHealthMonitorUnhealthy
+		return &reason
 	default:
-		return postInstrumentHealthMonitor.PostInstrumentHealthMonitorEvaluating
+		return nil
 	}
 }
