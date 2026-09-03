@@ -397,16 +397,29 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	return signals, nil
 }
 
-func isTracingLoadBalancingNeeded(_ context.Context, _ client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
+func isTracingLoadBalancingNeeded(ctx context.Context, c client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
 	// Tracing load balancing is required by every gateway feature that aggregates a whole trace.
 	// Without it the node collectors round-robin over the gateway replicas, so spans of the same
 	// trace reach different pods and each one only ever sees a fragment of the trace.
-	// The tail sampling and trace correlations conditions must stay in sync with the ones that
-	// install groupbytrace on the gateway in autoscaler/controllers/clustercollector/configmap.go.
+	// Keep these conditions in sync with traceAggregationNeeded in
+	// common/pipelinegen/config_builder.go (groupbytrace install).
 	serviceGraphEnabled := clusterCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorGroup.Spec.ServiceGraphDisabled
 	tailSamplingEnabled := clusterCollectorGroup.Spec.TailSampling != nil &&
 		clusterCollectorGroup.Spec.TailSampling.Disabled != nil &&
 		!*clusterCollectorGroup.Spec.TailSampling.Disabled
 	traceCorrelationsEnabled := clusterCollectorGroup.Spec.TraceCorrelations != nil
-	return serviceGraphEnabled || tailSamplingEnabled || traceCorrelationsEnabled, nil
+	if serviceGraphEnabled || tailSamplingEnabled || traceCorrelationsEnabled {
+		return true, nil
+	}
+
+	// Insights and interrogation enable groupbytrace via OdigosConfiguration and are not
+	// mirrored onto CollectorsGroupSpec; check the live config when a client is available.
+	if c != nil {
+		if cfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
+			if odigoscommon.InsightsPipelineActive(cfg.Insights) || odigoscommon.InterrogationActive(cfg.Interrogation) {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }

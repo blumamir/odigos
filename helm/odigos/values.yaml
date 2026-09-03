@@ -154,6 +154,40 @@ profiling:
     slotMaxBytes: 8388608
 
 # @schema
+# description: |-
+#   Interrogation loop (off by default): correlates traces and profiles via a bounding join
+#   so uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.
+# @schema
+interrogation:
+  # @schema
+  # description: When true, enables the interrogation loop (trace–profile correlation) on the collector.
+  # @schema
+  enabled: false
+  # @schema
+  # description: |-
+  #   Optional LLM used by the interrogation traces exporter to suggest which
+  #   profile stack frames should become spans. Uses the OpenAI Chat Completions
+  #   API (also works with openai_compatible gateways via baseUrl).
+  # @schema
+  llm:
+    # @schema
+    # description: LLM provider. Supported values - openai (default), openai_compatible.
+    # @schema
+    provider: openai
+    # @schema
+    # description: Model id (e.g. gpt-4o-mini).
+    # @schema
+    model: gpt-4o-mini
+    # @schema
+    # description: Bearer API key for the provider. Prefer injecting via --set or a secret overlay.
+    # @schema
+    apiKey: ""
+    # @schema
+    # description: Optional API root including /v1. Required when provider is openai_compatible.
+    # @schema
+    baseUrl: ""
+
+# @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
 # @schema
 userInstrumentationEnvs:

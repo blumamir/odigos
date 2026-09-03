@@ -627,6 +627,33 @@ type InsightsConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+// InterrogationLLMConfiguration configures the optional LLM used by the
+// interrogation traces exporter to suggest which stack frames should become spans.
+type InterrogationLLMConfiguration struct {
+	// Provider is the LLM backend. Supported: "openai" (default), "openai_compatible".
+	Provider string `json:"provider,omitempty" yaml:"provider,omitempty"`
+	// Model is the model id (e.g. "gpt-4o-mini").
+	Model string `json:"model,omitempty" yaml:"model,omitempty"`
+	// APIKey is the bearer token for the provider.
+	APIKey string `json:"apiKey,omitempty" yaml:"apiKey,omitempty"`
+	// BaseURL overrides the API root (include /v1). Required for openai_compatible.
+	BaseURL string `json:"baseUrl,omitempty" yaml:"baseUrl,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// InterrogationConfiguration toggles the interrogation loop that correlates
+// traces and profiles via a bounding join. Disabled unless Enabled is set.
+// When on, the gateway installs groupbytrace and the traces-side exporter taps
+// the root traces pipeline (post-groupby), same level as insights and service
+// I/O correlations.
+type InterrogationConfiguration struct {
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	// LLM optionally configures a chatbot that suggests instrumentation targets
+	// from joined profile stacks. When unset, prompts are only logged.
+	LLM *InterrogationLLMConfiguration `json:"llm,omitempty" yaml:"llm,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
@@ -698,6 +725,8 @@ type OdigosConfiguration struct {
 	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
 
 	Insights *InsightsConfiguration `json:"insights,omitempty" yaml:"insights,omitempty"`
+
+	Interrogation *InterrogationConfiguration `json:"interrogation,omitempty" yaml:"interrogation,omitempty"`
 }
 
 // ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
@@ -722,4 +751,16 @@ func InsightsPipelineActive(a *InsightsConfiguration) bool {
 // explicitly enabled on this configuration.
 func (o *OdigosConfiguration) InsightsEnabled() bool {
 	return o != nil && InsightsPipelineActive(o.Insights)
+}
+
+// InterrogationActive reports whether the interrogation loop (trace–profile
+// correlation) should run. Opt-in: Enabled must be explicitly true.
+func InterrogationActive(c *InterrogationConfiguration) bool {
+	return c != nil && c.Enabled != nil && *c.Enabled
+}
+
+// InterrogationEnabled reports whether interrogation is explicitly enabled on
+// this configuration.
+func (o *OdigosConfiguration) InterrogationEnabled() bool {
+	return o != nil && InterrogationActive(o.Interrogation)
 }

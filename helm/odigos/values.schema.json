@@ -1150,6 +1150,45 @@
       "required": [],
       "title": "instrumentor"
     },
+    "interrogation": {
+      "additionalProperties": false,
+      "description": "Interrogation loop (off by default): correlates traces and profiles via a bounding join\nso uprobe/probe profiles can be tied to spans. Opt-in; leave disabled unless you need it.",
+      "properties": {
+        "enabled": {
+          "default": "false",
+          "description": "When true, enables the interrogation loop (trace–profile correlation) on the collector.",
+          "required": [],
+          "title": "enabled"
+        },
+        "llm": {
+          "additionalProperties": false,
+          "description": "Optional LLM used by the interrogation traces exporter to suggest instrumentation targets.",
+          "properties": {
+            "provider": {
+              "description": "LLM provider. Supported values - openai (default), openai_compatible.",
+              "type": "string"
+            },
+            "model": {
+              "description": "Model id (e.g. gpt-4o-mini).",
+              "type": "string"
+            },
+            "apiKey": {
+              "description": "Bearer API key for the provider.",
+              "type": "string"
+            },
+            "baseUrl": {
+              "description": "Optional API root including /v1. Required when provider is openai_compatible.",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "title": "llm",
+          "type": "object"
+        }
+      },
+      "required": [],
+      "title": "interrogation"
+    },
     "karpenter": {
       "additionalProperties": false,
       "description": "Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file\nto add the odigos-agent startupTaints configuration.\nhttps://docs.odigos.io/setup/odigos-with-karpenter",
