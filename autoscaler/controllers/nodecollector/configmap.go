@@ -52,11 +52,13 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 	}
 
 	var profilingCfg *odigoscommon.ProfilingConfiguration
+	var interrogationEnabled bool
 	if cfg, err := utils.GetCurrentOdigosConfiguration(ctx, b.Client); err == nil {
 		profilingCfg = cfg.Profiling
+		interrogationEnabled = odigoscommon.InterrogationActive(cfg.Interrogation)
 	}
 
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, b.tier)
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, interrogationEnabled, b.tier)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -178,6 +180,7 @@ func calculateCollectorConfigDomains(
 	onGKE bool,
 	loadBalancingNeeded bool,
 	profiling *odigoscommon.ProfilingConfiguration,
+	interrogationEnabled bool,
 	tier odigoscommon.OdigosTier) (map[string]config.Config, string, error) {
 
 	logger := commonlogger.FromContext(ctx)
@@ -301,7 +304,7 @@ func calculateCollectorConfigDomains(
 	// The profiling pipeline's receiver is enterprise-only, so community tier never gets one
 	// regardless of what OdigosConfiguration asks for.
 	if tier.IsEnterprise() && odigoscommon.ProfilingPipelineActive(profiling) {
-		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling, processorsResults.ProfilesProcessors)
+		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling, processorsResults.ProfilesProcessors, interrogationEnabled)
 	}
 
 	mergedConfig, err := config.MergeConfigs(configDomains)
