@@ -206,8 +206,8 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	var interrogationCfg *odigoscommon.InterrogationConfiguration
 	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
 		profilingCfg = odigosCfg.Profiling
-		insightsCfg = odigosCfg.Insights
 		interrogationCfg = odigosCfg.Interrogation
+		insightsCfg = effectiveInsightsConfig(odigosCfg.Insights, tier)
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
