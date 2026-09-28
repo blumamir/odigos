@@ -156,6 +156,14 @@ type ProfilingConfig {
   enabled: Boolean
 }
 
+type UrlTemplatizationCardinalityControlConfig {
+  autoComputeRules: Boolean
+}
+
+type CardinalityControlConfig {
+  urlTemplatization: UrlTemplatizationCardinalityControlConfig
+}
+
 type TraceCorrelationsServiceIOConfig {
   enabled: Boolean
   inputSpanAttributes: [String!]
@@ -287,6 +295,7 @@ type EffectiveConfig {
   componentLogLevels: ComponentLogLevelsConfig
   sampling: SamplingConfig
   profiling: ProfilingConfig
+  cardinalityControl: CardinalityControlConfig
   traceCorrelations: TraceCorrelationsConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String

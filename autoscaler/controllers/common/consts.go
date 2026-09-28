@@ -32,3 +32,10 @@ const (
 	// InsightsGatewayExporter forwards spans to the in-cluster sidecar service.
 	InsightsGatewayExporter = "otlp_grpc/insights"
 )
+
+// OpenTelemetry component instance name for URL templatization auto-compute
+// rules: enterprise exporter appended to the root traces pipeline. Logs HTTP
+// spans that still lack http.route / url.template (cacheDb write comes later).
+const (
+	UrlTemplatizationExporter = "odigos_url_templatization"
+)

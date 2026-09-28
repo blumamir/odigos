@@ -73,6 +73,15 @@ data:
     insights:
       enabled: {{ .Values.insights.enabled }}
     {{- end }}
+    {{- /*
+    Enterprise-only. Gated on odigos.secretExists like insights: without a token the
+    gateway must not force traces on or install the unmatched-URL debug side-channel.
+    */}}
+    {{- if include "cardinalityControl.urlTemplatization.autoComputeRules.enabled" . | eq "true" }}
+    cardinalityControl:
+      urlTemplatization:
+        autoComputeRules: true
+    {{- end }}
     {{- if .Values.profiling.enabled }}
     {{- $pex := .Values.profiling.exporter | default dict }}
     {{- $pretry := $pex.retryOnFailure | default dict }}

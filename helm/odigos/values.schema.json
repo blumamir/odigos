@@ -149,6 +149,61 @@
       "required": [],
       "title": "autoscaler"
     },
+    "cacheDb": {
+      "additionalProperties": false,
+      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.autoComputeRules, which is enterprise-only\nand requires an on-prem token).\nBackend is an implementation detail (default image is Redis); values stay backend-agnostic\nso the chart can switch to another cache (e.g. Memcached) without renaming this section.",
+      "properties": {
+        "image": {
+          "default": "redis:7.4.2",
+          "description": "Cache container image (third-party; override for private mirrors or version pins).",
+          "required": [],
+          "title": "image"
+        },
+        "maxmemory": {
+          "default": "220mb",
+          "description": "Soft memory cap for the cache process when the backend supports it.\nWhen unset, derived as ~85% of the effective memory limit (see resources).",
+          "required": [],
+          "title": "maxmemory"
+        },
+        "maxmemoryPolicy": {
+          "default": "allkeys-lru",
+          "description": "Eviction policy when maxmemory is reached, when the backend supports it (e.g. allkeys-lru).",
+          "required": [],
+          "title": "maxmemoryPolicy"
+        },
+        "resources": {
+          "additionalProperties": true,
+          "default": "",
+          "description": "Optional CPU/memory requests and limits for the shared cache pod.\nWhen unset, defaults are chosen from the features that use the cache\n(e.g. cardinalityControl.urlTemplatization.autoComputeRules), with\nrequest equal to limit (Guaranteed QoS) so the pod is not evicted under pressure.\nSet requests and/or limits to override; if only one side is set, the other\nis mirrored from it.",
+          "required": [],
+          "title": "resources"
+        }
+      },
+      "required": [],
+      "title": "cacheDb"
+    },
+    "cardinalityControl": {
+      "additionalProperties": false,
+      "description": "Cardinality control settings. Configure how Odigos produces and maintains low-cardinality\nattributes and span names in telemetry, and discovers and removes high-cardinality ones\n(for example URL templatization, which sets http.route / url.template and rewrites\nHTTP span names to templated routes that must stay low-cardinality).",
+      "properties": {
+        "urlTemplatization": {
+          "additionalProperties": false,
+          "description": "URL templatization replaces variable parts of HTTP paths with placeholders\n(e.g. /users/123 → /users/{id}) in span names and attributes (http.route / url.template).",
+          "properties": {
+            "autoComputeRules": {
+              "default": "false",
+              "description": "When true, Odigos computes URL templatization rules from live traffic based on\npath segment occurrence counts. Opt-in; disabled by default.\nEnterprise-only — requires an on-prem token (onPremToken / odigos-pro secret).\nEnabling this deploys the shared cache under cacheDb.",
+              "required": [],
+              "title": "autoComputeRules"
+            }
+          },
+          "required": [],
+          "title": "urlTemplatization"
+        }
+      },
+      "required": [],
+      "title": "cardinalityControl"
+    },
     "centralProxy": {
       "additionalProperties": false,
       "description": "Configuration for the central proxy component.",

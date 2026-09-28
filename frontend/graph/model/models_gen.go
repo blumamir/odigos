@@ -120,6 +120,10 @@ type AutoRollbackConfig struct {
 	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
 }
 
+type CardinalityControlConfig struct {
+	URLTemplatization *URLTemplatizationCardinalityControlConfig `json:"urlTemplatization,omitempty"`
+}
+
 // Clearing buffered OTLP data for a workload slot
 type ClearProfilingBufferResult struct {
 	Status      string `json:"status"`
@@ -525,6 +529,7 @@ type EffectiveConfig struct {
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
 	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
 	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
+	CardinalityControl               *CardinalityControlConfig           `json:"cardinalityControl,omitempty"`
 	TraceCorrelations                *TraceCorrelationsConfig            `json:"traceCorrelations,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
@@ -2947,6 +2952,21 @@ type URLTemplatizationRuleInput struct {
 	Template string   `json:"template"`
 	Notes    *string  `json:"notes,omitempty"`
 	Examples []string `json:"examples,omitempty"`
+}
+
+type UnmatchedURLPath struct {
+	Path          string  `json:"path"`
+	Count         int     `json:"count"`
+	ContainerName *string `json:"containerName,omitempty"`
+}
+
+type UnmatchedURLPaths struct {
+	Server []*UnmatchedURLPath `json:"server"`
+	Client []*UnmatchedURLPath `json:"client"`
+}
+
+type URLTemplatizationCardinalityControlConfig struct {
+	AutoComputeRules *bool `json:"autoComputeRules,omitempty"`
 }
 
 type URLTemplatizationDefaultGroup struct {

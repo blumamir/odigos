@@ -189,6 +189,11 @@ export const GET_EFFECTIVE_CONFIG = gql`
       profiling {
         enabled
       }
+      cardinalityControl {
+        urlTemplatization {
+          autoComputeRules
+        }
+      }
       traceCorrelations {
         serviceIO {
           enabled

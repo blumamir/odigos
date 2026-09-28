@@ -1,0 +1,16 @@
+# Unmatched HTTP paths collected for URL templatization auto-compute rules (cacheDb).
+
+type UnmatchedUrlPath {
+  path: String!
+  count: Int!
+  containerName: String
+}
+
+type UnmatchedUrlPaths {
+  server: [UnmatchedUrlPath!]!
+  client: [UnmatchedUrlPath!]!
+}
+
+extend type Query {
+  unmatchedUrlPaths(namespace: String!, kind: String!, name: String!): UnmatchedUrlPaths!
+}

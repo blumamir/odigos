@@ -627,6 +627,23 @@ type InsightsConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+// UrlTemplatizationCardinalityControlConfiguration controls traffic-based
+// computation of URL templatization rules.
+type UrlTemplatizationCardinalityControlConfiguration struct {
+	// AutoComputeRules, when true, enables computing URL templatization rules from
+	// live traffic (HTTP spans with a path but no http.route / url.template).
+	// Enterprise-only; disabled unless explicitly true.
+	AutoComputeRules *bool `json:"autoComputeRules,omitempty" yaml:"autoComputeRules,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// CardinalityControlConfiguration holds settings for producing and maintaining
+// low-cardinality attributes and span names.
+type CardinalityControlConfiguration struct {
+	UrlTemplatization *UrlTemplatizationCardinalityControlConfiguration `json:"urlTemplatization,omitempty" yaml:"urlTemplatization,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
@@ -697,6 +714,8 @@ type OdigosConfiguration struct {
 	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
 
 	Insights *InsightsConfiguration `json:"insights,omitempty" yaml:"insights,omitempty"`
+
+	CardinalityControl *CardinalityControlConfiguration `json:"cardinalityControl,omitempty" yaml:"cardinalityControl,omitempty"`
 }
 
 // ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
@@ -721,4 +740,17 @@ func InsightsPipelineActive(a *InsightsConfiguration) bool {
 // explicitly enabled on this configuration.
 func (o *OdigosConfiguration) InsightsEnabled() bool {
 	return o != nil && InsightsPipelineActive(o.Insights)
+}
+
+// UrlTemplatizationAutoComputeRulesActive reports whether traffic-based URL
+// templatization rule computation is enabled. Opt-in: AutoComputeRules must
+// be explicitly true.
+func UrlTemplatizationAutoComputeRulesActive(c *CardinalityControlConfiguration) bool {
+	return c != nil && c.UrlTemplatization != nil && c.UrlTemplatization.AutoComputeRules != nil && *c.UrlTemplatization.AutoComputeRules
+}
+
+// UrlTemplatizationAutoComputeRulesEnabled reports whether traffic-based URL
+// templatization rule computation is explicitly enabled on this configuration.
+func (o *OdigosConfiguration) UrlTemplatizationAutoComputeRulesEnabled() bool {
+	return o != nil && UrlTemplatizationAutoComputeRulesActive(o.CardinalityControl)
 }
