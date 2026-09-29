@@ -45,3 +45,54 @@ type UrlTemplatizationConfig struct {
 	// default templatization is applied on a single http span if none of the custom templatization rules matched.
 	Default *DefaultTemplatizationConfig `json:"default,omitempty"`
 }
+
+// URLTemplatizationSegment describes one templated path segment in an auto-computed rule.
+//
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type URLTemplatizationSegment struct {
+	// TemplateName is the name inside braces in the template rule (e.g. "id" for "{id}").
+	// When the same name appears more than once in a template, entries are ordered by
+	// appearance of templated segments in the rule (left to right).
+	TemplateName string `json:"templateName"`
+
+	// Examples are concrete path-segment values observed for this templated segment.
+	Examples []string `json:"examples,omitempty"`
+}
+
+// URLTemplatizationRuleCertainty describes how confident auto-compute is in a recommended rule.
+// +kubebuilder:validation:Enum=High;Moderate
+type URLTemplatizationRuleCertainty string
+
+const (
+	URLTemplatizationRuleCertaintyHigh     URLTemplatizationRuleCertainty = "High"
+	URLTemplatizationRuleCertaintyModerate URLTemplatizationRuleCertainty = "Moderate"
+)
+
+// URLTemplatizationAutoComputedRule is one auto-computed URL templatization recommendation.
+// Presence in status means the recommendation is pending; accepting or rejecting removes it.
+//
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type URLTemplatizationAutoComputedRule struct {
+	// Template is the recommended URL template rule (e.g. "/users/{id}/orders/{orderId}").
+	Template string `json:"template"`
+
+	// Certainty indicates how confident auto-compute is in this recommendation.
+	Certainty URLTemplatizationRuleCertainty `json:"certainty"`
+
+	// Segments lists the templated segments in this rule.
+	Segments []URLTemplatizationSegment `json:"segments,omitempty"`
+}
+
+// URLTemplatizationContainerFindings holds auto-computed URL templatization recommendations for one container.
+//
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type URLTemplatizationContainerFindings struct {
+	// ContainerName is the name of the container within the workload.
+	ContainerName string `json:"containerName"`
+
+	// Rules are the auto-computed URL templatization recommendations for this container.
+	Rules []URLTemplatizationAutoComputedRule `json:"rules,omitempty"`
+}

@@ -78,6 +78,10 @@ type ActionStatus struct {
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+
+	// URLTemplatizationAutoCompute holds findings from auto-computing URL templatization rules.
+	// Populated for URLTemplatization actions when auto-compute has produced recommendations.
+	URLTemplatizationAutoCompute *actions.URLTemplatizationAutoComputeStatus `json:"urlTemplatizationAutoCompute,omitempty"`
 }
 
 //+genclient

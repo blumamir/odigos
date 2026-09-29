@@ -831,6 +831,105 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              urlTemplatizationAutoCompute:
+                description: |-
+                  URLTemplatizationAutoCompute holds findings from auto-computing URL templatization rules.
+                  Populated for URLTemplatization actions when auto-compute has produced recommendations.
+                properties:
+                  workloads:
+                    description: Workloads lists auto-compute findings grouped by
+                      workload.
+                    items:
+                      description: URLTemplatizationWorkloadFindings holds auto-computed
+                        URL templatization recommendations for one workload.
+                      properties:
+                        containers:
+                          description: Containers lists per-container auto-compute
+                            findings for this workload.
+                          items:
+                            description: URLTemplatizationContainerFindings holds
+                              auto-computed URL templatization recommendations for
+                              one container.
+                            properties:
+                              containerName:
+                                description: ContainerName is the name of the container
+                                  within the workload.
+                                type: string
+                              rules:
+                                description: Rules are the auto-computed URL templatization
+                                  recommendations for this container.
+                                items:
+                                  description: |-
+                                    URLTemplatizationAutoComputedRule is one auto-computed URL templatization recommendation.
+                                    Presence in status means the recommendation is pending; accepting or rejecting removes it.
+                                  properties:
+                                    certainty:
+                                      description: Certainty indicates how confident
+                                        auto-compute is in this recommendation.
+                                      enum:
+                                      - High
+                                      - Moderate
+                                      type: string
+                                    segments:
+                                      description: Segments lists the templated segments
+                                        in this rule.
+                                      items:
+                                        description: URLTemplatizationSegment describes
+                                          one templated path segment in an auto-computed
+                                          rule.
+                                        properties:
+                                          examples:
+                                            description: Examples are concrete path-segment
+                                              values observed for this templated segment.
+                                            items:
+                                              type: string
+                                            type: array
+                                          templateName:
+                                            description: |-
+                                              TemplateName is the name inside braces in the template rule (e.g. "id" for "{id}").
+                                              When the same name appears more than once in a template, entries are ordered by
+                                              appearance of templated segments in the rule (left to right).
+                                            type: string
+                                        required:
+                                        - templateName
+                                        type: object
+                                      type: array
+                                    template:
+                                      description: Template is the recommended URL
+                                        template rule (e.g. "/users/{id}/orders/{orderId}").
+                                      type: string
+                                  required:
+                                  - certainty
+                                  - template
+                                  type: object
+                                type: array
+                            required:
+                            - containerName
+                            type: object
+                          type: array
+                        workload:
+                          description: Workload identifies the source (namespace,
+                            kind, name).
+                          properties:
+                            kind:
+                              description: |-
+                                1. the pascal case representation of the workload kind
+                                it is used in k8s api objects as the `Kind` field.
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          required:
+                          - kind
+                          - name
+                          - namespace
+                          type: object
+                      required:
+                      - workload
+                      type: object
+                    type: array
+                type: object
             type: object
         type: object
     served: true

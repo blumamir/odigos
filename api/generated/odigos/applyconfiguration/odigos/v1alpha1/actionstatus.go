@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
@@ -27,6 +28,9 @@ type ActionStatusApplyConfiguration struct {
 	// Represents the observations of a action's current state.
 	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	// URLTemplatizationAutoCompute holds findings from auto-computing URL templatization rules.
+	// Populated for URLTemplatization actions when auto-compute has produced recommendations.
+	URLTemplatizationAutoCompute *actions.URLTemplatizationAutoComputeStatus `json:"urlTemplatizationAutoCompute,omitempty"`
 }
 
 // ActionStatusApplyConfiguration constructs a declarative configuration of the ActionStatus type for use with
@@ -45,5 +49,13 @@ func (b *ActionStatusApplyConfiguration) WithConditions(values ...*v1.ConditionA
 		}
 		b.Conditions = append(b.Conditions, *values[i])
 	}
+	return b
+}
+
+// WithURLTemplatizationAutoCompute sets the URLTemplatizationAutoCompute field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the URLTemplatizationAutoCompute field is set to the value of the last call.
+func (b *ActionStatusApplyConfiguration) WithURLTemplatizationAutoCompute(value actions.URLTemplatizationAutoComputeStatus) *ActionStatusApplyConfiguration {
+	b.URLTemplatizationAutoCompute = &value
 	return b
 }
