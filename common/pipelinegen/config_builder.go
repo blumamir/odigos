@@ -68,7 +68,7 @@ type GatewayConfigOptions struct {
 	InsightsOtlpEndpoint string
 
 	// CardinalityControl enables traffic-based URL templatization rule
-	// computation. When AutoComputeRules is active, traces are forced on so
+	// computation. When LiveTrafficLearning is active, traces are forced on so
 	// the gateway can tap HTTP spans missing http.route / url.template.
 	CardinalityControl *common.CardinalityControlConfiguration
 
@@ -216,8 +216,8 @@ func CalculateGatewayConfig(
 	if common.InsightsPipelineActive(gatewayOptions.Insights) {
 		tracesEnabled = true
 	}
-	// URL templatization auto-compute rules also taps the root traces pipeline.
-	if common.UrlTemplatizationAutoComputeRulesActive(gatewayOptions.CardinalityControl) {
+	// URL templatization live traffic learning also taps the root traces pipeline.
+	if common.UrlTemplatizationLiveTrafficLearningActive(gatewayOptions.CardinalityControl) {
 		tracesEnabled = true
 	}
 

@@ -33,7 +33,7 @@ const (
 	InsightsGatewayExporter = "otlp_grpc/insights"
 )
 
-// OpenTelemetry component instance name for URL templatization auto-compute
+// OpenTelemetry component instance name for URL templatization live traffic learning
 // rules: enterprise exporter appended to the root traces pipeline. Logs HTTP
 // spans that still lack http.route / url.template (cacheDb write comes later).
 const (

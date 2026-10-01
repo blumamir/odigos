@@ -46,21 +46,7 @@ type UrlTemplatizationConfig struct {
 	Default *DefaultTemplatizationConfig `json:"default,omitempty"`
 }
 
-// URLTemplatizationSegment describes one templated path segment in an auto-computed rule.
-//
-// +kubebuilder:object:generate=true
-// +kubebuilder:deepcopy-gen=true
-type URLTemplatizationSegment struct {
-	// TemplateName is the name inside braces in the template rule (e.g. "id" for "{id}").
-	// When the same name appears more than once in a template, entries are ordered by
-	// appearance of templated segments in the rule (left to right).
-	TemplateName string `json:"templateName"`
-
-	// Examples are concrete path-segment values observed for this templated segment.
-	Examples []string `json:"examples,omitempty"`
-}
-
-// URLTemplatizationRuleCertainty describes how confident auto-compute is in a recommended rule.
+// URLTemplatizationRuleCertainty describes how confident live traffic learning is in a templated path segment.
 // +kubebuilder:validation:Enum=High;Moderate
 type URLTemplatizationRuleCertainty string
 
@@ -69,23 +55,42 @@ const (
 	URLTemplatizationRuleCertaintyModerate URLTemplatizationRuleCertainty = "Moderate"
 )
 
-// URLTemplatizationAutoComputedRule is one auto-computed URL templatization recommendation.
+// URLTemplatizationSegment describes one templated path segment in a learned rule.
+//
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type URLTemplatizationSegment struct {
+	// TemplateName is the name inside braces in the template rule (e.g. "id" for "{id}").
+	// When the same name appears more than once in a template, entries are ordered by
+	// appearance of templated segments in the rule (left to right).
+	// For a wildcard segment the value is "*".
+	TemplateName string `json:"templateName"`
+
+	// Certainty indicates how confident live traffic learning is in this templated segment.
+	Certainty URLTemplatizationRuleCertainty `json:"certainty"`
+
+	// Examples are concrete path-segment values observed for this templated segment.
+	// Learning keeps up to 5 examples.
+	Examples []string `json:"examples,omitempty"`
+}
+
+// URLTemplatizationLearnedRule is one learned URL templatization recommendation.
 // Presence in status means the recommendation is pending; accepting or rejecting removes it.
 //
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
-type URLTemplatizationAutoComputedRule struct {
+type URLTemplatizationLearnedRule struct {
 	// Template is the recommended URL template rule (e.g. "/users/{id}/orders/{orderId}").
 	Template string `json:"template"`
 
-	// Certainty indicates how confident auto-compute is in this recommendation.
-	Certainty URLTemplatizationRuleCertainty `json:"certainty"`
+	// Reason is a human-readable explanation of why this rule was suggested.
+	Reason string `json:"reason,omitempty"`
 
 	// Segments lists the templated segments in this rule.
 	Segments []URLTemplatizationSegment `json:"segments,omitempty"`
 }
 
-// URLTemplatizationContainerFindings holds auto-computed URL templatization recommendations for one container.
+// URLTemplatizationContainerFindings holds learned URL templatization recommendations for one container.
 //
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
@@ -93,6 +98,6 @@ type URLTemplatizationContainerFindings struct {
 	// ContainerName is the name of the container within the workload.
 	ContainerName string `json:"containerName"`
 
-	// Rules are the auto-computed URL templatization recommendations for this container.
-	Rules []URLTemplatizationAutoComputedRule `json:"rules,omitempty"`
+	// Rules are the learned URL templatization recommendations for this container.
+	Rules []URLTemplatizationLearnedRule `json:"rules,omitempty"`
 }

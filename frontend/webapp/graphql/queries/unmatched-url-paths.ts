@@ -13,6 +13,35 @@ export const GET_UNMATCHED_URL_PATHS = gql`
         count
         containerName
       }
+      serverRecommendedRules {
+        template
+        reason
+        segments {
+          templateName
+          certainty
+          examples
+        }
+      }
+      clientRecommendedRules {
+        template
+        reason
+        segments {
+          templateName
+          certainty
+          examples
+        }
+      }
+      existingConfigs {
+        containerName
+        templates
+        default {
+          disabled
+          skipPolicy {
+            skipForNonSuccessCodes
+            skipHttpStatusCodes
+          }
+        }
+      }
     }
   }
 `;

@@ -628,13 +628,21 @@ type InsightsConfiguration struct {
 }
 
 // +kubebuilder:object:generate=true
-// UrlTemplatizationCardinalityControlConfiguration controls traffic-based
-// computation of URL templatization rules.
-type UrlTemplatizationCardinalityControlConfiguration struct {
-	// AutoComputeRules, when true, enables computing URL templatization rules from
+// LiveTrafficLearningConfiguration toggles learning URL templatization rules
+// from live traffic. Disabled unless Enabled is set; when on, Odigos records
+// unmatched HTTP paths and suggests templatization rules.
+type LiveTrafficLearningConfiguration struct {
+	// Enabled, when true, enables learning URL templatization rules from
 	// live traffic (HTTP spans with a path but no http.route / url.template).
 	// Enterprise-only; disabled unless explicitly true.
-	AutoComputeRules *bool `json:"autoComputeRules,omitempty" yaml:"autoComputeRules,omitempty"`
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// UrlTemplatizationCardinalityControlConfiguration controls learning URL
+// templatization rules from live traffic.
+type UrlTemplatizationCardinalityControlConfiguration struct {
+	LiveTrafficLearning *LiveTrafficLearningConfiguration `json:"liveTrafficLearning,omitempty" yaml:"liveTrafficLearning,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -742,15 +750,14 @@ func (o *OdigosConfiguration) InsightsEnabled() bool {
 	return o != nil && InsightsPipelineActive(o.Insights)
 }
 
-// UrlTemplatizationAutoComputeRulesActive reports whether traffic-based URL
-// templatization rule computation is enabled. Opt-in: AutoComputeRules must
-// be explicitly true.
-func UrlTemplatizationAutoComputeRulesActive(c *CardinalityControlConfiguration) bool {
-	return c != nil && c.UrlTemplatization != nil && c.UrlTemplatization.AutoComputeRules != nil && *c.UrlTemplatization.AutoComputeRules
+// UrlTemplatizationLiveTrafficLearningActive reports whether traffic-based URL
+// templatization rule learning is enabled. Opt-in: Enabled must be explicitly true.
+func UrlTemplatizationLiveTrafficLearningActive(c *CardinalityControlConfiguration) bool {
+	return c != nil && c.UrlTemplatization != nil && c.UrlTemplatization.LiveTrafficLearning != nil && c.UrlTemplatization.LiveTrafficLearning.Enabled != nil && *c.UrlTemplatization.LiveTrafficLearning.Enabled
 }
 
-// UrlTemplatizationAutoComputeRulesEnabled reports whether traffic-based URL
+// UrlTemplatizationLiveTrafficLearningEnabled reports whether traffic-based URL
 // templatization rule computation is explicitly enabled on this configuration.
-func (o *OdigosConfiguration) UrlTemplatizationAutoComputeRulesEnabled() bool {
-	return o != nil && UrlTemplatizationAutoComputeRulesActive(o.CardinalityControl)
+func (o *OdigosConfiguration) UrlTemplatizationLiveTrafficLearningEnabled() bool {
+	return o != nil && UrlTemplatizationLiveTrafficLearningActive(o.CardinalityControl)
 }

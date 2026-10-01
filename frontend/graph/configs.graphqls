@@ -156,8 +156,12 @@ type ProfilingConfig {
   enabled: Boolean
 }
 
+type LiveTrafficLearningConfig {
+  enabled: Boolean
+}
+
 type UrlTemplatizationCardinalityControlConfig {
-  autoComputeRules: Boolean
+  liveTrafficLearning: LiveTrafficLearningConfig
 }
 
 type CardinalityControlConfig {

@@ -1,8 +1,8 @@
 # urltemplate
 
-Shared helpers for parsing and matching URL **path rules**.
+Shared helpers for URL **path rules**, default segment classification, and live-traffic learning.
 
-Shared segment-based path rule parsing and matching, used by URL templatization and HTTP route matching for sampling. It lives under `common` so it has no Kubernetes or collector-specific dependencies.
+Shared segment-based path rule parsing/matching, built-in heuristics for classifying path segments as templates (`{id}`, `{date}`, `{email}`), and the live-traffic learning walk that suggests templatization rules from unmatched path counts. It lives under `common` so it has no Kubernetes or collector-specific dependencies.
 
 ## Path rule syntax
 
@@ -35,10 +35,15 @@ rule.IsPathSegmentsMatching(segments) // exact, or prefix when PathRule.Prefix i
 - `ParseUserInputRuleString` — turn a user-facing rule string into a `PathRule`
 - `SplitPath` — split a concrete path into segments and whether it had a leading `/`
 - `PathRule.IsPathSegmentsMatching` — exact match, or prefix match when `Prefix` is true
+- `SegmentTemplateName` — classify a path segment with built-in heuristics; returns `"id"`, `"date"`, `"email"`, or `""` if static
+- `BuildPathTrie` / `BuildPathTrieFromCounts` — index unmatched path counts for live-traffic learning
+- `FindLiveTrafficLearningRules` — suggest templatization rules from a path trie
 
 Each `RulePathSegment` is one of: static (`StaticString`), wildcard (`Wildcard`), or template (`TemplateName`).
 
 ## Current consumers
 
-- `collector/processors/odigosurltemplateprocessor` — parse custom templatization rules and apply them to paths
+- `collector/processors/odigosurltemplateprocessor` — parse custom templatization rules and apply default heuristics to paths
 - `collector/processors/odigostailsamplingprocessor` — match sampling rules against `http.route` / path / templated path
+- `frontend` `unmatchedUrlPaths` query — load resolved UrlTemplatization from InstrumentationConfig, filter Redis paths that already match those templates, then compute recommended rules from the remainder; also return existingConfigs (templates + default) per container
+- enterprise `instrumentor` live-traffic learning job — same learning walk when syncing Action status

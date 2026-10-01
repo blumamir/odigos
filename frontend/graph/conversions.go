@@ -451,11 +451,14 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 	if config.CardinalityControl != nil {
 		result.CardinalityControl = &model.CardinalityControlConfig{}
 		if config.CardinalityControl.UrlTemplatization != nil {
-			result.CardinalityControl.URLTemplatization = &model.URLTemplatizationCardinalityControlConfig{
-				AutoComputeRules: config.CardinalityControl.UrlTemplatization.AutoComputeRules,
-			}
-			if config.CardinalityControl.UrlTemplatization.AutoComputeRules != nil {
-				pc.record("cardinalityControl.urlTemplatization.autoComputeRules")
+			result.CardinalityControl.URLTemplatization = &model.URLTemplatizationCardinalityControlConfig{}
+			if config.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
+				result.CardinalityControl.URLTemplatization.LiveTrafficLearning = &model.LiveTrafficLearningConfig{
+					Enabled: config.CardinalityControl.UrlTemplatization.LiveTrafficLearning.Enabled,
+				}
+				if config.CardinalityControl.UrlTemplatization.LiveTrafficLearning.Enabled != nil {
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.enabled")
+				}
 			}
 		}
 	}

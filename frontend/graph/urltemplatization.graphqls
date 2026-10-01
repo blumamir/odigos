@@ -1,4 +1,10 @@
-# Unmatched HTTP paths collected for URL templatization auto-compute rules (cacheDb).
+# Unmatched HTTP paths collected for URL templatization live traffic learning (cacheDb).
+# Paths that already match an accepted templatization rule for the workload are omitted
+# from server/client and from recommended-rule computation.
+# Recommended rules are computed on each query from the remaining Redis counts (not from
+# Action status / last learning-loop run).
+# existingConfigs is the resolved UrlTemplatization config from InstrumentationConfig
+# (WorkloadCollectorConfig and/or agent Traces), per container.
 
 type UnmatchedUrlPath {
   path: String!
@@ -6,9 +12,37 @@ type UnmatchedUrlPath {
   containerName: String
 }
 
+type UrlTemplatizationRecommendedSegment {
+  templateName: String!
+  certainty: String!
+  examples: [String!]!
+}
+
+type UrlTemplatizationRecommendedRule {
+  template: String!
+  reason: String!
+  segments: [UrlTemplatizationRecommendedSegment!]!
+}
+
+# Resolved default templatization settings for one container (from UrlTemplatizationConfig.default).
+type UrlTemplatizationExistingDefault {
+  disabled: Boolean!
+  skipPolicy: UrlTemplatizationDefaultSkipPolicy
+}
+
+# Resolved URL templatization config applied to one container of the workload.
+type UrlTemplatizationExistingConfig {
+  containerName: String!
+  templates: [String!]!
+  default: UrlTemplatizationExistingDefault
+}
+
 type UnmatchedUrlPaths {
   server: [UnmatchedUrlPath!]!
   client: [UnmatchedUrlPath!]!
+  serverRecommendedRules: [UrlTemplatizationRecommendedRule!]!
+  clientRecommendedRules: [UrlTemplatizationRecommendedRule!]!
+  existingConfigs: [UrlTemplatizationExistingConfig!]!
 }
 
 extend type Query {

@@ -9,7 +9,7 @@ import (
 )
 
 // effectiveCardinalityControl returns the cardinality-control config the gateway
-// should be wired for. Auto-compute URL templatization rules is enterprise-only —
+// should be wired for. Live traffic learning of URL templatization rules is enterprise-only —
 // helm already gates the helm value on an on-prem token, and community tier must
 // not install the side-channel pipeline. Same reasoning as effectiveInsightsConfig.
 func effectiveCardinalityControl(cc *common.CardinalityControlConfiguration, tier common.OdigosTier) *common.CardinalityControlConfiguration {
@@ -25,7 +25,7 @@ func effectiveCardinalityControl(cc *common.CardinalityControlConfiguration, tie
 // that processor is configured). The exporter counts unmatched HTTP paths in
 // cacheDb Redis. Noop when disabled or when no root traces pipeline exists.
 func addUrlTemplatizationUnmatchedExporter(c *config.Config, odigosNs string, cardinalityControl *common.CardinalityControlConfiguration) error {
-	if !common.UrlTemplatizationAutoComputeRulesActive(cardinalityControl) {
+	if !common.UrlTemplatizationLiveTrafficLearningActive(cardinalityControl) {
 		return nil
 	}
 

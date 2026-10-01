@@ -2272,6 +2272,10 @@ type LanguageConfig struct {
 	EnvVars *string `json:"envVars,omitempty"`
 }
 
+type LiveTrafficLearningConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
 type LocalUIConfigAllowConcurrentAgentsInput struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
@@ -2961,12 +2965,15 @@ type UnmatchedURLPath struct {
 }
 
 type UnmatchedURLPaths struct {
-	Server []*UnmatchedURLPath `json:"server"`
-	Client []*UnmatchedURLPath `json:"client"`
+	Server                 []*UnmatchedURLPath                 `json:"server"`
+	Client                 []*UnmatchedURLPath                 `json:"client"`
+	ServerRecommendedRules []*URLTemplatizationRecommendedRule `json:"serverRecommendedRules"`
+	ClientRecommendedRules []*URLTemplatizationRecommendedRule `json:"clientRecommendedRules"`
+	ExistingConfigs        []*URLTemplatizationExistingConfig  `json:"existingConfigs"`
 }
 
 type URLTemplatizationCardinalityControlConfig struct {
-	AutoComputeRules *bool `json:"autoComputeRules,omitempty"`
+	LiveTrafficLearning *LiveTrafficLearningConfig `json:"liveTrafficLearning,omitempty"`
 }
 
 type URLTemplatizationDefaultGroup struct {
@@ -2989,6 +2996,29 @@ type URLTemplatizationDefaultSkipPolicy struct {
 type URLTemplatizationDefaultSkipPolicyInput struct {
 	SkipForNonSuccessCodes *bool `json:"skipForNonSuccessCodes,omitempty"`
 	SkipHTTPStatusCodes    []int `json:"skipHttpStatusCodes,omitempty"`
+}
+
+type URLTemplatizationExistingConfig struct {
+	ContainerName string                            `json:"containerName"`
+	Templates     []string                          `json:"templates"`
+	Default       *URLTemplatizationExistingDefault `json:"default,omitempty"`
+}
+
+type URLTemplatizationExistingDefault struct {
+	Disabled   bool                                `json:"disabled"`
+	SkipPolicy *URLTemplatizationDefaultSkipPolicy `json:"skipPolicy,omitempty"`
+}
+
+type URLTemplatizationRecommendedRule struct {
+	Template string                                 `json:"template"`
+	Reason   string                                 `json:"reason"`
+	Segments []*URLTemplatizationRecommendedSegment `json:"segments"`
+}
+
+type URLTemplatizationRecommendedSegment struct {
+	TemplateName string   `json:"templateName"`
+	Certainty    string   `json:"certainty"`
+	Examples     []string `json:"examples"`
 }
 
 type URLTemplatizationRulesGroup struct {

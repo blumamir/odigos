@@ -173,9 +173,9 @@ func (in *ActionStatus) DeepCopyInto(out *ActionStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.URLTemplatizationAutoCompute != nil {
-		in, out := &in.URLTemplatizationAutoCompute, &out.URLTemplatizationAutoCompute
-		*out = new(actions.URLTemplatizationAutoComputeStatus)
+	if in.URLTemplatizationLiveTrafficLearning != nil {
+		in, out := &in.URLTemplatizationLiveTrafficLearning, &out.URLTemplatizationLiveTrafficLearning
+		*out = new(actions.URLTemplatizationLiveTrafficLearningStatus)
 		(*in).DeepCopyInto(*out)
 	}
 }

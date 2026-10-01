@@ -254,24 +254,24 @@ imagePullSecrets:
 {{- and .Values.traceCorrelations .Values.traceCorrelations.serviceIO .Values.traceCorrelations.serviceIO.enabled -}}
 {{- end }}
 
-{{/* Returns true when enterprise URL templatization auto-compute rules are enabled. */}}
-{{- define "cardinalityControl.urlTemplatization.autoComputeRules.enabled" -}}
-{{- and .Values.cardinalityControl .Values.cardinalityControl.urlTemplatization .Values.cardinalityControl.urlTemplatization.autoComputeRules (include "odigos.secretExists" .) -}}
+{{/* Returns true when enterprise URL templatization live traffic learning is enabled. */}}
+{{- define "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" -}}
+{{- and .Values.cardinalityControl .Values.cardinalityControl.urlTemplatization .Values.cardinalityControl.urlTemplatization.liveTrafficLearning .Values.cardinalityControl.urlTemplatization.liveTrafficLearning.enabled (include "odigos.secretExists" .) -}}
 {{- end }}
 
 {{/*
-  Fail install/upgrade when autoComputeRules is requested without an enterprise token.
+  Fail install/upgrade when liveTrafficLearning.enabled is requested without an enterprise token.
   Mirrors odigos.secretExists (onPremToken, odigos-pro secret, or externalOnpremTokenSecret).
 */}}
-{{- define "cardinalityControl.urlTemplatization.autoComputeRules.validate" -}}
-{{- if and .Values.cardinalityControl .Values.cardinalityControl.urlTemplatization .Values.cardinalityControl.urlTemplatization.autoComputeRules (not (include "odigos.secretExists" .)) -}}
-{{- fail "cardinalityControl.urlTemplatization.autoComputeRules is an enterprise feature and requires an on-prem token. Set onPremToken, set externalOnpremTokenSecret to true when providing the odigos-pro secret externally, or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
+{{- define "cardinalityControl.urlTemplatization.liveTrafficLearning.validate" -}}
+{{- if and .Values.cardinalityControl .Values.cardinalityControl.urlTemplatization .Values.cardinalityControl.urlTemplatization.liveTrafficLearning .Values.cardinalityControl.urlTemplatization.liveTrafficLearning.enabled (not (include "odigos.secretExists" .)) -}}
+{{- fail "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled is an enterprise feature and requires an on-prem token. Set onPremToken, set externalOnpremTokenSecret to true when providing the odigos-pro secret externally, or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
 {{- end -}}
 {{- end }}
 
 {{/* Returns true when the shared cache DB should be deployed (any consuming feature enabled). */}}
 {{- define "cacheDb.enabled" -}}
-{{- include "cardinalityControl.urlTemplatization.autoComputeRules.enabled" . -}}
+{{- include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . -}}
 {{- end }}
 
 {{/*
@@ -280,7 +280,7 @@ imagePullSecrets:
   request == limit for Guaranteed QoS so the cache is not evicted under pressure.
 */}}
 {{- define "cacheDb.featureDefaultResources" -}}
-{{- if include "cardinalityControl.urlTemplatization.autoComputeRules.enabled" . | eq "true" -}}
+{{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" -}}
 requests:
   cpu: 200m
   memory: 256Mi

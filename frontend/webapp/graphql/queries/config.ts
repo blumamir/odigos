@@ -191,8 +191,9 @@ export const GET_EFFECTIVE_CONFIG = gql`
       }
       cardinalityControl {
         urlTemplatization {
-          autoComputeRules
-        }
+          liveTrafficLearning {
+            enabled
+          }        }
       }
       traceCorrelations {
         serviceIO {

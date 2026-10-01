@@ -11,6 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func liveTrafficLearning(enabled bool) *common.UrlTemplatizationCardinalityControlConfiguration {
+	return &common.UrlTemplatizationCardinalityControlConfiguration{
+		LiveTrafficLearning: &common.LiveTrafficLearningConfiguration{Enabled: &enabled},
+	}
+}
+
 func TestAddUrlTemplatizationUnmatchedExporter_Disabled(t *testing.T) {
 	t.Run("nil_config_noop", func(t *testing.T) {
 		c := configWithTracesIn()
@@ -24,10 +30,9 @@ func TestAddUrlTemplatizationUnmatchedExporter_Disabled(t *testing.T) {
 	})
 
 	t.Run("explicit_false_noop", func(t *testing.T) {
-		off := false
 		c := configWithTracesIn()
 		require.NoError(t, addUrlTemplatizationUnmatchedExporter(c, "odigos-system", &common.CardinalityControlConfiguration{
-			UrlTemplatization: &common.UrlTemplatizationCardinalityControlConfiguration{AutoComputeRules: &off},
+			UrlTemplatization: liveTrafficLearning(false),
 		}))
 
 		_, hasExp := c.Exporters[commonconf.UrlTemplatizationExporter]
@@ -36,10 +41,9 @@ func TestAddUrlTemplatizationUnmatchedExporter_Disabled(t *testing.T) {
 }
 
 func TestAddUrlTemplatizationUnmatchedExporter_NoTracesInPipelineNoop(t *testing.T) {
-	on := true
 	c := &config.Config{Service: config.Service{Pipelines: map[string]config.Pipeline{}}}
 	require.NoError(t, addUrlTemplatizationUnmatchedExporter(c, "odigos-system", &common.CardinalityControlConfiguration{
-		UrlTemplatization: &common.UrlTemplatizationCardinalityControlConfiguration{AutoComputeRules: &on},
+		UrlTemplatization: liveTrafficLearning(true),
 	}))
 
 	_, hasExp := c.Exporters[commonconf.UrlTemplatizationExporter]
@@ -47,10 +51,9 @@ func TestAddUrlTemplatizationUnmatchedExporter_NoTracesInPipelineNoop(t *testing
 }
 
 func TestAddUrlTemplatizationUnmatchedExporter_Enabled(t *testing.T) {
-	on := true
 	c := configWithTracesIn()
 	require.NoError(t, addUrlTemplatizationUnmatchedExporter(c, "odigos-system", &common.CardinalityControlConfiguration{
-		UrlTemplatization: &common.UrlTemplatizationCardinalityControlConfiguration{AutoComputeRules: &on},
+		UrlTemplatization: liveTrafficLearning(true),
 	}))
 
 	exp, ok := c.Exporters[commonconf.UrlTemplatizationExporter].(config.GenericMap)
@@ -69,9 +72,8 @@ func TestAddUrlTemplatizationUnmatchedExporter_Enabled(t *testing.T) {
 }
 
 func TestEffectiveCardinalityControl_CommunityTierNil(t *testing.T) {
-	on := true
 	cc := &common.CardinalityControlConfiguration{
-		UrlTemplatization: &common.UrlTemplatizationCardinalityControlConfiguration{AutoComputeRules: &on},
+		UrlTemplatization: liveTrafficLearning(true),
 	}
 	assert.Nil(t, effectiveCardinalityControl(cc, common.CommunityOdigosTier))
 	assert.Equal(t, cc, effectiveCardinalityControl(cc, common.OnPremOdigosTier))

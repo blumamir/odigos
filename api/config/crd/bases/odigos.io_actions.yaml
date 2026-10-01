@@ -831,24 +831,24 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              urlTemplatizationAutoCompute:
+              urlTemplatizationLiveTrafficLearning:
                 description: |-
-                  URLTemplatizationAutoCompute holds findings from auto-computing URL templatization rules.
-                  Populated for URLTemplatization actions when auto-compute has produced recommendations.
+                  URLTemplatizationLiveTrafficLearning holds findings from live-traffic learning of URL templatization rules.
+                  Populated for URLTemplatization actions when live traffic learning has produced recommendations.
                 properties:
                   workloads:
-                    description: Workloads lists auto-compute findings grouped by
+                    description: Workloads lists live traffic learning findings grouped by
                       workload.
                     items:
-                      description: URLTemplatizationWorkloadFindings holds auto-computed
+                      description: URLTemplatizationWorkloadFindings holds learned
                         URL templatization recommendations for one workload.
                       properties:
                         containers:
-                          description: Containers lists per-container auto-compute
+                          description: Containers lists per-container live traffic learning
                             findings for this workload.
                           items:
                             description: URLTemplatizationContainerFindings holds
-                              auto-computed URL templatization recommendations for
+                              learned URL templatization recommendations for
                               one container.
                             properties:
                               containerName:
@@ -856,16 +856,16 @@ spec:
                                   within the workload.
                                 type: string
                               rules:
-                                description: Rules are the auto-computed URL templatization
+                                description: Rules are the learned URL templatization
                                   recommendations for this container.
                                 items:
                                   description: |-
-                                    URLTemplatizationAutoComputedRule is one auto-computed URL templatization recommendation.
+                                    URLTemplatizationLearnedRule is one learned URL templatization recommendation.
                                     Presence in status means the recommendation is pending; accepting or rejecting removes it.
                                   properties:
                                     certainty:
                                       description: Certainty indicates how confident
-                                        auto-compute is in this recommendation.
+                                        live traffic learning is in this recommendation.
                                       enum:
                                       - High
                                       - Moderate
@@ -875,7 +875,7 @@ spec:
                                         in this rule.
                                       items:
                                         description: URLTemplatizationSegment describes
-                                          one templated path segment in an auto-computed
+                                          one templated path segment in an learned
                                           rule.
                                         properties:
                                           examples:

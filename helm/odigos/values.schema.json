@@ -151,7 +151,7 @@
     },
     "cacheDb": {
       "additionalProperties": false,
-      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.autoComputeRules, which is enterprise-only\nand requires an on-prem token).\nBackend is an implementation detail (default image is Redis); values stay backend-agnostic\nso the chart can switch to another cache (e.g. Memcached) without renaming this section.",
+      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is enterprise-only\nand requires an on-prem token).\nBackend is an implementation detail (default image is Redis); values stay backend-agnostic\nso the chart can switch to another cache (e.g. Memcached) without renaming this section.",
       "properties": {
         "image": {
           "default": "redis:7.4.2",
@@ -174,7 +174,7 @@
         "resources": {
           "additionalProperties": true,
           "default": "",
-          "description": "Optional CPU/memory requests and limits for the shared cache pod.\nWhen unset, defaults are chosen from the features that use the cache\n(e.g. cardinalityControl.urlTemplatization.autoComputeRules), with\nrequest equal to limit (Guaranteed QoS) so the pod is not evicted under pressure.\nSet requests and/or limits to override; if only one side is set, the other\nis mirrored from it.",
+          "description": "Optional CPU/memory requests and limits for the shared cache pod.\nWhen unset, defaults are chosen from the features that use the cache\n(e.g. cardinalityControl.urlTemplatization.liveTrafficLearning.enabled), with\nrequest equal to limit (Guaranteed QoS) so the pod is not evicted under pressure.\nSet requests and/or limits to override; if only one side is set, the other\nis mirrored from it.",
           "required": [],
           "title": "resources"
         }
@@ -190,11 +190,18 @@
           "additionalProperties": false,
           "description": "URL templatization replaces variable parts of HTTP paths with placeholders\n(e.g. /users/123 → /users/{id}) in span names and attributes (http.route / url.template).",
           "properties": {
-            "autoComputeRules": {
-              "default": "false",
-              "description": "When true, Odigos computes URL templatization rules from live traffic based on\npath segment occurrence counts. Opt-in; disabled by default.\nEnterprise-only — requires an on-prem token (onPremToken / odigos-pro secret).\nEnabling this deploys the shared cache under cacheDb.",
+            "liveTrafficLearning": {
+              "additionalProperties": false,
+              "description": "Learn URL templatization rules from live traffic based on path segment\noccurrence counts. Enterprise-only — requires an on-prem token\n(onPremToken / odigos-pro secret). Enabling this deploys the shared\ncache under cacheDb.",
+              "properties": {
+                "enabled": {
+                  "description": "When true, enables live-traffic learning of URL templatization rules.\nOpt-in; unset/empty keeps the feature off.",
+                  "required": [],
+                  "title": "enabled"
+                }
+              },
               "required": [],
-              "title": "autoComputeRules"
+              "title": "liveTrafficLearning"
             }
           },
           "required": [],

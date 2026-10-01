@@ -28,9 +28,9 @@ type ActionStatusApplyConfiguration struct {
 	// Represents the observations of a action's current state.
 	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
-	// URLTemplatizationAutoCompute holds findings from auto-computing URL templatization rules.
-	// Populated for URLTemplatization actions when auto-compute has produced recommendations.
-	URLTemplatizationAutoCompute *actions.URLTemplatizationAutoComputeStatus `json:"urlTemplatizationAutoCompute,omitempty"`
+	// URLTemplatizationLiveTrafficLearning holds findings from live-traffic learning of URL templatization rules.
+	// Populated for URLTemplatization actions when live traffic learning has produced recommendations.
+	URLTemplatizationLiveTrafficLearning *actions.URLTemplatizationLiveTrafficLearningStatus `json:"urlTemplatizationLiveTrafficLearning,omitempty"`
 }
 
 // ActionStatusApplyConfiguration constructs a declarative configuration of the ActionStatus type for use with
@@ -52,10 +52,10 @@ func (b *ActionStatusApplyConfiguration) WithConditions(values ...*v1.ConditionA
 	return b
 }
 
-// WithURLTemplatizationAutoCompute sets the URLTemplatizationAutoCompute field in the declarative configuration to the given value
+// WithURLTemplatizationLiveTrafficLearning sets the URLTemplatizationLiveTrafficLearning field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the URLTemplatizationAutoCompute field is set to the value of the last call.
-func (b *ActionStatusApplyConfiguration) WithURLTemplatizationAutoCompute(value actions.URLTemplatizationAutoComputeStatus) *ActionStatusApplyConfiguration {
-	b.URLTemplatizationAutoCompute = &value
+// If called multiple times, the URLTemplatizationLiveTrafficLearning field is set to the value of the last call.
+func (b *ActionStatusApplyConfiguration) WithURLTemplatizationLiveTrafficLearning(value actions.URLTemplatizationLiveTrafficLearningStatus) *ActionStatusApplyConfiguration {
+	b.URLTemplatizationLiveTrafficLearning = &value
 	return b
 }
