@@ -27,6 +27,7 @@ import (
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -39,6 +40,7 @@ type Instrumentor struct {
 	certReady          chan struct{}
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
+	k8sVersion         *version.Version
 }
 
 // Options configures a new Instrumentor.
@@ -177,6 +179,7 @@ func New(opts Options) (*Instrumentor, error) {
 		certReady:          rotatorSetupFinished,
 		dp:                 opts.DistrosProvider,
 		webhooksRegistered: webhooksRegistered,
+		k8sVersion:         k8sVersion,
 	}, nil
 }
 
@@ -227,6 +230,7 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		logger.Info("Cert rotator is ready")
 		err := controllers.RegisterWebhooks(i.mgr, controllers.WebhookConfig{
 			DistrosProvider: i.dp,
+			K8sVersion:      i.k8sVersion,
 		})
 		if err != nil {
 			return err
