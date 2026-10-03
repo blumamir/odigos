@@ -699,6 +699,30 @@ spec:
                         If SourcesScope is empty, the rules apply to all sources (global).
                         If set, rules apply to selected scope.
                       properties:
+                        documentedTemplates:
+                          description: |-
+                            DocumentedTemplates are templates with optional example paths and notes.
+                            Their Template strings are applied like Templates when configuring a source.
+                          items:
+                            description: |-
+                              UrlTemplatizationDocumentedTemplate is a template plus optional learning context
+                              (example paths and notes) from how the rule was computed.
+                            properties:
+                              examples:
+                                description: Examples are concrete example paths that
+                                  motivated this template (up to 5).
+                                items:
+                                  type: string
+                                maxItems: 5
+                                type: array
+                              notes:
+                                type: string
+                              template:
+                                type: string
+                            required:
+                            - template
+                            type: object
+                          type: array
                         scopes:
                           description: |-
                             SourcesScope selects which sources (workloads / containers / languages) the rules apply to.
@@ -837,19 +861,18 @@ spec:
                   Populated for URLTemplatization actions when live traffic learning has produced recommendations.
                 properties:
                   workloads:
-                    description: Workloads lists live traffic learning findings grouped by
-                      workload.
+                    description: Workloads lists live traffic learning findings grouped
+                      by workload.
                     items:
                       description: URLTemplatizationWorkloadFindings holds learned
                         URL templatization recommendations for one workload.
                       properties:
                         containers:
-                          description: Containers lists per-container live traffic learning
-                            findings for this workload.
+                          description: Containers lists per-container live traffic
+                            learning findings for this workload.
                           items:
                             description: URLTemplatizationContainerFindings holds
-                              learned URL templatization recommendations for
-                              one container.
+                              learned URL templatization recommendations for one container.
                             properties:
                               containerName:
                                 description: ContainerName is the name of the container
@@ -863,24 +886,30 @@ spec:
                                     URLTemplatizationLearnedRule is one learned URL templatization recommendation.
                                     Presence in status means the recommendation is pending; accepting or rejecting removes it.
                                   properties:
-                                    certainty:
-                                      description: Certainty indicates how confident
-                                        live traffic learning is in this recommendation.
-                                      enum:
-                                      - High
-                                      - Moderate
+                                    reason:
+                                      description: Reason is a human-readable explanation
+                                        of why this rule was suggested.
                                       type: string
                                     segments:
                                       description: Segments lists the templated segments
                                         in this rule.
                                       items:
                                         description: URLTemplatizationSegment describes
-                                          one templated path segment in an learned
+                                          one templated path segment in a learned
                                           rule.
                                         properties:
+                                          certainty:
+                                            description: Certainty indicates how confident
+                                              live traffic learning is in this templated
+                                              segment.
+                                            enum:
+                                            - High
+                                            - Moderate
+                                            type: string
                                           examples:
-                                            description: Examples are concrete path-segment
-                                              values observed for this templated segment.
+                                            description: |-
+                                              Examples are concrete path-segment values observed for this templated segment.
+                                              Learning keeps up to 5 examples.
                                             items:
                                               type: string
                                             type: array
@@ -889,8 +918,10 @@ spec:
                                               TemplateName is the name inside braces in the template rule (e.g. "id" for "{id}").
                                               When the same name appears more than once in a template, entries are ordered by
                                               appearance of templated segments in the rule (left to right).
+                                              For a wildcard segment the value is "*".
                                             type: string
                                         required:
+                                        - certainty
                                         - templateName
                                         type: object
                                       type: array
@@ -899,7 +930,6 @@ spec:
                                         template rule (e.g. "/users/{id}/orders/{orderId}").
                                       type: string
                                   required:
-                                  - certainty
                                   - template
                                   type: object
                                 type: array

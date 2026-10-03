@@ -15,6 +15,7 @@ export default function Page() {
   // The kit handles both the source-drawer close and staging which rule to
   // open (via `useSamplingDrawerStore`); the page's only job is to navigate.
   const onRedirectToSampling = useCallback(() => router.push(ROUTES.SAMPLING), [router]);
+  const onRedirectToUrlTemplatization = useCallback(() => router.push(ROUTES.URL_TEMPLATIZATION), [router]);
 
-  return <Overview onRedirectToSampling={onRedirectToSampling} />;
+  return <Overview onRedirectToSampling={onRedirectToSampling} onRedirectToUrlTemplatization={onRedirectToUrlTemplatization} />;
 }

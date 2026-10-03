@@ -1474,6 +1474,7 @@ type ComplexityRoot struct {
 		RuntimeInfo                func(childComplexity int) int
 		ServiceName                func(childComplexity int) int
 		TelemetryMetrics           func(childComplexity int) int
+		URLTemplatization          func(childComplexity int) int
 		WorkloadHealthStatus       func(childComplexity int) int
 		WorkloadOdigosHealthStatus func(childComplexity int) int
 	}
@@ -1707,6 +1708,11 @@ type ComplexityRoot struct {
 	K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
 		IsExpectingTelemetry    func(childComplexity int) int
 		TelemetryObservedStatus func(childComplexity int) int
+	}
+
+	K8sWorkloadUrlTemplatization struct {
+		ExistingConfigs     func(childComplexity int) int
+		LiveTrafficLearning func(childComplexity int) int
 	}
 
 	KarpenterConfig struct {
@@ -2050,7 +2056,6 @@ type ComplexityRoot struct {
 		Sampling                          func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
 		TraceCorrelations                 func(childComplexity int, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) int
-		UnmatchedURLPaths                 func(childComplexity int, namespace string, kind string, name string) int
 		Workloads                         func(childComplexity int, filter *model.WorkloadFilter) int
 		WorkloadsByIds                    func(childComplexity int, ids []*model.K8sWorkloadIDInput) int
 	}
@@ -2329,14 +2334,6 @@ type ComplexityRoot struct {
 		Path          func(childComplexity int) int
 	}
 
-	UnmatchedUrlPaths struct {
-		Client                 func(childComplexity int) int
-		ClientRecommendedRules func(childComplexity int) int
-		ExistingConfigs        func(childComplexity int) int
-		Server                 func(childComplexity int) int
-		ServerRecommendedRules func(childComplexity int) int
-	}
-
 	UrlTemplatizationCardinalityControlConfig struct {
 		LiveTrafficLearning func(childComplexity int) int
 	}
@@ -2361,6 +2358,13 @@ type ComplexityRoot struct {
 	UrlTemplatizationExistingDefault struct {
 		Disabled   func(childComplexity int) int
 		SkipPolicy func(childComplexity int) int
+	}
+
+	UrlTemplatizationLiveTrafficLearning struct {
+		Client                 func(childComplexity int) int
+		ClientRecommendedRules func(childComplexity int) int
+		Server                 func(childComplexity int) int
+		ServerRecommendedRules func(childComplexity int) int
 	}
 
 	UrlTemplatizationRecommendedRule struct {
@@ -2462,6 +2466,7 @@ type K8sWorkloadResolver interface {
 	DataStreamNames(ctx context.Context, obj *model.K8sWorkload) ([]string, error)
 	NumberOfInstances(ctx context.Context, obj *model.K8sWorkload) (*int, error)
 	RollbackOccurred(ctx context.Context, obj *model.K8sWorkload) (bool, error)
+	URLTemplatization(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadURLTemplatization, error)
 }
 type K8sWorkloadPodContainerResolver interface {
 	Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error)
@@ -2577,7 +2582,6 @@ type QueryResolver interface {
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
 	InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error)
 	TraceCorrelations(ctx context.Context, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) (*model.TraceCorrelations, error)
-	UnmatchedURLPaths(ctx context.Context, namespace string, kind string, name string) (*model.UnmatchedURLPaths, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	WorkloadsByIds(ctx context.Context, ids []*model.K8sWorkloadIDInput) ([]*model.K8sWorkload, error)
 	Namespaces(ctx context.Context) ([]*model.K8sNamespace, error)
@@ -9297,6 +9301,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkload.TelemetryMetrics(childComplexity), true
 
+	case "K8sWorkload.urlTemplatization":
+		if e.complexity.K8sWorkload.URLTemplatization == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkload.URLTemplatization(childComplexity), true
+
 	case "K8sWorkload.workloadHealthStatus":
 		if e.complexity.K8sWorkload.WorkloadHealthStatus == nil {
 			break
@@ -10276,6 +10287,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.TelemetryObservedStatus(childComplexity), true
+
+	case "K8sWorkloadUrlTemplatization.existingConfigs":
+		if e.complexity.K8sWorkloadUrlTemplatization.ExistingConfigs == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadUrlTemplatization.ExistingConfigs(childComplexity), true
+
+	case "K8sWorkloadUrlTemplatization.liveTrafficLearning":
+		if e.complexity.K8sWorkloadUrlTemplatization.LiveTrafficLearning == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadUrlTemplatization.LiveTrafficLearning(childComplexity), true
 
 	case "KarpenterConfig.enabled":
 		if e.complexity.KarpenterConfig.Enabled == nil {
@@ -12265,18 +12290,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.TraceCorrelations(childComplexity, args["filter"].(*model.WorkloadFilter), args["timeRange"].(*model.TraceCorrelationsTimeRangeInput)), true
 
-	case "Query.unmatchedUrlPaths":
-		if e.complexity.Query.UnmatchedURLPaths == nil {
-			break
-		}
-
-		args, err := ec.field_Query_unmatchedUrlPaths_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.UnmatchedURLPaths(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
-
 	case "Query.workloads":
 		if e.complexity.Query.Workloads == nil {
 			break
@@ -13337,41 +13350,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UnmatchedUrlPath.Path(childComplexity), true
 
-	case "UnmatchedUrlPaths.client":
-		if e.complexity.UnmatchedUrlPaths.Client == nil {
-			break
-		}
-
-		return e.complexity.UnmatchedUrlPaths.Client(childComplexity), true
-
-	case "UnmatchedUrlPaths.clientRecommendedRules":
-		if e.complexity.UnmatchedUrlPaths.ClientRecommendedRules == nil {
-			break
-		}
-
-		return e.complexity.UnmatchedUrlPaths.ClientRecommendedRules(childComplexity), true
-
-	case "UnmatchedUrlPaths.existingConfigs":
-		if e.complexity.UnmatchedUrlPaths.ExistingConfigs == nil {
-			break
-		}
-
-		return e.complexity.UnmatchedUrlPaths.ExistingConfigs(childComplexity), true
-
-	case "UnmatchedUrlPaths.server":
-		if e.complexity.UnmatchedUrlPaths.Server == nil {
-			break
-		}
-
-		return e.complexity.UnmatchedUrlPaths.Server(childComplexity), true
-
-	case "UnmatchedUrlPaths.serverRecommendedRules":
-		if e.complexity.UnmatchedUrlPaths.ServerRecommendedRules == nil {
-			break
-		}
-
-		return e.complexity.UnmatchedUrlPaths.ServerRecommendedRules(childComplexity), true
-
 	case "UrlTemplatizationCardinalityControlConfig.liveTrafficLearning":
 		if e.complexity.UrlTemplatizationCardinalityControlConfig.LiveTrafficLearning == nil {
 			break
@@ -13448,6 +13426,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UrlTemplatizationExistingDefault.SkipPolicy(childComplexity), true
+
+	case "UrlTemplatizationLiveTrafficLearning.client":
+		if e.complexity.UrlTemplatizationLiveTrafficLearning.Client == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationLiveTrafficLearning.Client(childComplexity), true
+
+	case "UrlTemplatizationLiveTrafficLearning.clientRecommendedRules":
+		if e.complexity.UrlTemplatizationLiveTrafficLearning.ClientRecommendedRules == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationLiveTrafficLearning.ClientRecommendedRules(childComplexity), true
+
+	case "UrlTemplatizationLiveTrafficLearning.server":
+		if e.complexity.UrlTemplatizationLiveTrafficLearning.Server == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationLiveTrafficLearning.Server(childComplexity), true
+
+	case "UrlTemplatizationLiveTrafficLearning.serverRecommendedRules":
+		if e.complexity.UrlTemplatizationLiveTrafficLearning.ServerRecommendedRules == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationLiveTrafficLearning.ServerRecommendedRules(childComplexity), true
 
 	case "UrlTemplatizationRecommendedRule.reason":
 		if e.complexity.UrlTemplatizationRecommendedRule.Reason == nil {
@@ -18311,80 +18317,6 @@ func (ec *executionContext) field_Query_traceCorrelations_argsTimeRange(
 	}
 
 	var zeroVal *model.TraceCorrelationsTimeRangeInput
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_unmatchedUrlPaths_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Query_unmatchedUrlPaths_argsNamespace(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["namespace"] = arg0
-	arg1, err := ec.field_Query_unmatchedUrlPaths_argsKind(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["kind"] = arg1
-	arg2, err := ec.field_Query_unmatchedUrlPaths_argsName(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["name"] = arg2
-	return args, nil
-}
-func (ec *executionContext) field_Query_unmatchedUrlPaths_argsNamespace(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["namespace"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
-	if tmp, ok := rawArgs["namespace"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_unmatchedUrlPaths_argsKind(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["kind"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
-	if tmp, ok := rawArgs["kind"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_unmatchedUrlPaths_argsName(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["name"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-	if tmp, ok := rawArgs["name"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -60853,6 +60785,8 @@ func (ec *executionContext) fieldContext_K8sNamespace_workloads(_ context.Contex
 				return ec.fieldContext_K8sWorkload_numberOfInstances(ctx, field)
 			case "rollbackOccurred":
 				return ec.fieldContext_K8sWorkload_rollbackOccurred(ctx, field)
+			case "urlTemplatization":
+				return ec.fieldContext_K8sWorkload_urlTemplatization(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
 		},
@@ -61894,6 +61828,56 @@ func (ec *executionContext) fieldContext_K8sWorkload_rollbackOccurred(_ context.
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkload_urlTemplatization(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkload_urlTemplatization(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkload().URLTemplatization(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadURLTemplatization)
+	fc.Result = res
+	return ec.marshalNK8sWorkloadUrlTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadURLTemplatization(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkload_urlTemplatization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkload",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "existingConfigs":
+				return ec.fieldContext_K8sWorkloadUrlTemplatization_existingConfigs(ctx, field)
+			case "liveTrafficLearning":
+				return ec.fieldContext_K8sWorkloadUrlTemplatization_liveTrafficLearning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadUrlTemplatization", field.Name)
 		},
 	}
 	return fc, nil
@@ -68333,6 +68317,112 @@ func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetricsExpectingTel
 				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadUrlTemplatization_existingConfigs(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadURLTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadUrlTemplatization_existingConfigs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExistingConfigs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.URLTemplatizationExistingConfig)
+	fc.Result = res
+	return ec.marshalNUrlTemplatizationExistingConfig2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationExistingConfigᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadUrlTemplatization_existingConfigs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadUrlTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "containerName":
+				return ec.fieldContext_UrlTemplatizationExistingConfig_containerName(ctx, field)
+			case "templates":
+				return ec.fieldContext_UrlTemplatizationExistingConfig_templates(ctx, field)
+			case "default":
+				return ec.fieldContext_UrlTemplatizationExistingConfig_default(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationExistingConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadUrlTemplatization_liveTrafficLearning(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadURLTemplatization) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadUrlTemplatization_liveTrafficLearning(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiveTrafficLearning, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.URLTemplatizationLiveTrafficLearning)
+	fc.Result = res
+	return ec.marshalNUrlTemplatizationLiveTrafficLearning2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationLiveTrafficLearning(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadUrlTemplatization_liveTrafficLearning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadUrlTemplatization",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "server":
+				return ec.fieldContext_UrlTemplatizationLiveTrafficLearning_server(ctx, field)
+			case "client":
+				return ec.fieldContext_UrlTemplatizationLiveTrafficLearning_client(ctx, field)
+			case "serverRecommendedRules":
+				return ec.fieldContext_UrlTemplatizationLiveTrafficLearning_serverRecommendedRules(ctx, field)
+			case "clientRecommendedRules":
+				return ec.fieldContext_UrlTemplatizationLiveTrafficLearning_clientRecommendedRules(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationLiveTrafficLearning", field.Name)
 		},
 	}
 	return fc, nil
@@ -80483,73 +80573,6 @@ func (ec *executionContext) fieldContext_Query_traceCorrelations(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_unmatchedUrlPaths(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_unmatchedUrlPaths(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UnmatchedURLPaths(rctx, fc.Args["namespace"].(string), fc.Args["kind"].(string), fc.Args["name"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.UnmatchedURLPaths)
-	fc.Result = res
-	return ec.marshalNUnmatchedUrlPaths2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPaths(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_unmatchedUrlPaths(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "server":
-				return ec.fieldContext_UnmatchedUrlPaths_server(ctx, field)
-			case "client":
-				return ec.fieldContext_UnmatchedUrlPaths_client(ctx, field)
-			case "serverRecommendedRules":
-				return ec.fieldContext_UnmatchedUrlPaths_serverRecommendedRules(ctx, field)
-			case "clientRecommendedRules":
-				return ec.fieldContext_UnmatchedUrlPaths_clientRecommendedRules(ctx, field)
-			case "existingConfigs":
-				return ec.fieldContext_UnmatchedUrlPaths_existingConfigs(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type UnmatchedUrlPaths", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_unmatchedUrlPaths_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_workloads(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_workloads(ctx, field)
 	if err != nil {
@@ -80629,6 +80652,8 @@ func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, fi
 				return ec.fieldContext_K8sWorkload_numberOfInstances(ctx, field)
 			case "rollbackOccurred":
 				return ec.fieldContext_K8sWorkload_rollbackOccurred(ctx, field)
+			case "urlTemplatization":
+				return ec.fieldContext_K8sWorkload_urlTemplatization(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
 		},
@@ -80726,6 +80751,8 @@ func (ec *executionContext) fieldContext_Query_workloadsByIds(ctx context.Contex
 				return ec.fieldContext_K8sWorkload_numberOfInstances(ctx, field)
 			case "rollbackOccurred":
 				return ec.fieldContext_K8sWorkload_rollbackOccurred(ctx, field)
+			case "urlTemplatization":
+				return ec.fieldContext_K8sWorkload_urlTemplatization(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
 		},
@@ -87674,266 +87701,6 @@ func (ec *executionContext) fieldContext_UnmatchedUrlPath_containerName(_ contex
 	return fc, nil
 }
 
-func (ec *executionContext) _UnmatchedUrlPaths_server(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPaths) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UnmatchedUrlPaths_server(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Server, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.UnmatchedURLPath)
-	fc.Result = res
-	return ec.marshalNUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UnmatchedUrlPaths_server(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UnmatchedUrlPaths",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "path":
-				return ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
-			case "count":
-				return ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
-			case "containerName":
-				return ec.fieldContext_UnmatchedUrlPath_containerName(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type UnmatchedUrlPath", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _UnmatchedUrlPaths_client(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPaths) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UnmatchedUrlPaths_client(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Client, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.UnmatchedURLPath)
-	fc.Result = res
-	return ec.marshalNUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UnmatchedUrlPaths_client(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UnmatchedUrlPaths",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "path":
-				return ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
-			case "count":
-				return ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
-			case "containerName":
-				return ec.fieldContext_UnmatchedUrlPath_containerName(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type UnmatchedUrlPath", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _UnmatchedUrlPaths_serverRecommendedRules(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPaths) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UnmatchedUrlPaths_serverRecommendedRules(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ServerRecommendedRules, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.URLTemplatizationRecommendedRule)
-	fc.Result = res
-	return ec.marshalNUrlTemplatizationRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRecommendedRuleᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UnmatchedUrlPaths_serverRecommendedRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UnmatchedUrlPaths",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "template":
-				return ec.fieldContext_UrlTemplatizationRecommendedRule_template(ctx, field)
-			case "reason":
-				return ec.fieldContext_UrlTemplatizationRecommendedRule_reason(ctx, field)
-			case "segments":
-				return ec.fieldContext_UrlTemplatizationRecommendedRule_segments(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationRecommendedRule", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _UnmatchedUrlPaths_clientRecommendedRules(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPaths) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UnmatchedUrlPaths_clientRecommendedRules(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ClientRecommendedRules, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.URLTemplatizationRecommendedRule)
-	fc.Result = res
-	return ec.marshalNUrlTemplatizationRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRecommendedRuleᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UnmatchedUrlPaths_clientRecommendedRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UnmatchedUrlPaths",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "template":
-				return ec.fieldContext_UrlTemplatizationRecommendedRule_template(ctx, field)
-			case "reason":
-				return ec.fieldContext_UrlTemplatizationRecommendedRule_reason(ctx, field)
-			case "segments":
-				return ec.fieldContext_UrlTemplatizationRecommendedRule_segments(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationRecommendedRule", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _UnmatchedUrlPaths_existingConfigs(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPaths) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_UnmatchedUrlPaths_existingConfigs(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ExistingConfigs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.URLTemplatizationExistingConfig)
-	fc.Result = res
-	return ec.marshalNUrlTemplatizationExistingConfig2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationExistingConfigᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_UnmatchedUrlPaths_existingConfigs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "UnmatchedUrlPaths",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "containerName":
-				return ec.fieldContext_UrlTemplatizationExistingConfig_containerName(ctx, field)
-			case "templates":
-				return ec.fieldContext_UrlTemplatizationExistingConfig_templates(ctx, field)
-			case "default":
-				return ec.fieldContext_UrlTemplatizationExistingConfig_default(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationExistingConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationCardinalityControlConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx, field)
 	if err != nil {
@@ -88419,6 +88186,214 @@ func (ec *executionContext) fieldContext_UrlTemplatizationExistingDefault_skipPo
 				return ec.fieldContext_UrlTemplatizationDefaultSkipPolicy_skipHttpStatusCodes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationDefaultSkipPolicy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationLiveTrafficLearning_server(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationLiveTrafficLearning_server(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Server, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.UnmatchedURLPath)
+	fc.Result = res
+	return ec.marshalNUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationLiveTrafficLearning_server(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "path":
+				return ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
+			case "count":
+				return ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
+			case "containerName":
+				return ec.fieldContext_UnmatchedUrlPath_containerName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UnmatchedUrlPath", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationLiveTrafficLearning_client(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationLiveTrafficLearning_client(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Client, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.UnmatchedURLPath)
+	fc.Result = res
+	return ec.marshalNUnmatchedUrlPath2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPathᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationLiveTrafficLearning_client(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "path":
+				return ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
+			case "count":
+				return ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
+			case "containerName":
+				return ec.fieldContext_UnmatchedUrlPath_containerName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UnmatchedUrlPath", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationLiveTrafficLearning_serverRecommendedRules(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationLiveTrafficLearning_serverRecommendedRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServerRecommendedRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.URLTemplatizationRecommendedRule)
+	fc.Result = res
+	return ec.marshalNUrlTemplatizationRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRecommendedRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationLiveTrafficLearning_serverRecommendedRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "template":
+				return ec.fieldContext_UrlTemplatizationRecommendedRule_template(ctx, field)
+			case "reason":
+				return ec.fieldContext_UrlTemplatizationRecommendedRule_reason(ctx, field)
+			case "segments":
+				return ec.fieldContext_UrlTemplatizationRecommendedRule_segments(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationRecommendedRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationLiveTrafficLearning_clientRecommendedRules(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationLiveTrafficLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationLiveTrafficLearning_clientRecommendedRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientRecommendedRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.URLTemplatizationRecommendedRule)
+	fc.Result = res
+	return ec.marshalNUrlTemplatizationRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRecommendedRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationLiveTrafficLearning_clientRecommendedRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationLiveTrafficLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "template":
+				return ec.fieldContext_UrlTemplatizationRecommendedRule_template(ctx, field)
+			case "reason":
+				return ec.fieldContext_UrlTemplatizationRecommendedRule_reason(ctx, field)
+			case "segments":
+				return ec.fieldContext_UrlTemplatizationRecommendedRule_segments(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationRecommendedRule", field.Name)
 		},
 	}
 	return fc, nil
@@ -105851,6 +105826,42 @@ func (ec *executionContext) _K8sWorkload(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "urlTemplatization":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkload_urlTemplatization(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -107448,6 +107459,50 @@ func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus
 			out.Values[i] = ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_isExpectingTelemetry(ctx, field, obj)
 		case "telemetryObservedStatus":
 			out.Values[i] = ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus_telemetryObservedStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var k8sWorkloadUrlTemplatizationImplementors = []string{"K8sWorkloadUrlTemplatization"}
+
+func (ec *executionContext) _K8sWorkloadUrlTemplatization(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadURLTemplatization) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadUrlTemplatizationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadUrlTemplatization")
+		case "existingConfigs":
+			out.Values[i] = ec._K8sWorkloadUrlTemplatization_existingConfigs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "liveTrafficLearning":
+			out.Values[i] = ec._K8sWorkloadUrlTemplatization_liveTrafficLearning(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -110313,28 +110368,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "unmatchedUrlPaths":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_unmatchedUrlPaths(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "workloads":
 			field := field
 
@@ -112677,65 +112710,6 @@ func (ec *executionContext) _UnmatchedUrlPath(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var unmatchedUrlPathsImplementors = []string{"UnmatchedUrlPaths"}
-
-func (ec *executionContext) _UnmatchedUrlPaths(ctx context.Context, sel ast.SelectionSet, obj *model.UnmatchedURLPaths) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, unmatchedUrlPathsImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("UnmatchedUrlPaths")
-		case "server":
-			out.Values[i] = ec._UnmatchedUrlPaths_server(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "client":
-			out.Values[i] = ec._UnmatchedUrlPaths_client(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "serverRecommendedRules":
-			out.Values[i] = ec._UnmatchedUrlPaths_serverRecommendedRules(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "clientRecommendedRules":
-			out.Values[i] = ec._UnmatchedUrlPaths_clientRecommendedRules(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "existingConfigs":
-			out.Values[i] = ec._UnmatchedUrlPaths_existingConfigs(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var urlTemplatizationCardinalityControlConfigImplementors = []string{"UrlTemplatizationCardinalityControlConfig"}
 
 func (ec *executionContext) _UrlTemplatizationCardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationCardinalityControlConfig) graphql.Marshaler {
@@ -112914,6 +112888,60 @@ func (ec *executionContext) _UrlTemplatizationExistingDefault(ctx context.Contex
 			}
 		case "skipPolicy":
 			out.Values[i] = ec._UrlTemplatizationExistingDefault_skipPolicy(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var urlTemplatizationLiveTrafficLearningImplementors = []string{"UrlTemplatizationLiveTrafficLearning"}
+
+func (ec *executionContext) _UrlTemplatizationLiveTrafficLearning(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationLiveTrafficLearning) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, urlTemplatizationLiveTrafficLearningImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UrlTemplatizationLiveTrafficLearning")
+		case "server":
+			out.Values[i] = ec._UrlTemplatizationLiveTrafficLearning_server(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "client":
+			out.Values[i] = ec._UrlTemplatizationLiveTrafficLearning_client(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serverRecommendedRules":
+			out.Values[i] = ec._UrlTemplatizationLiveTrafficLearning_serverRecommendedRules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "clientRecommendedRules":
+			out.Values[i] = ec._UrlTemplatizationLiveTrafficLearning_clientRecommendedRules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -118911,6 +118939,20 @@ func (ec *executionContext) marshalNK8sWorkloadTelemetryMetricsExpectingTelemetr
 	return ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNK8sWorkloadUrlTemplatization2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadURLTemplatization(ctx context.Context, sel ast.SelectionSet, v model.K8sWorkloadURLTemplatization) graphql.Marshaler {
+	return ec._K8sWorkloadUrlTemplatization(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNK8sWorkloadUrlTemplatization2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadURLTemplatization(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadURLTemplatization) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._K8sWorkloadUrlTemplatization(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNLocalUiConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInput(ctx context.Context, v any) (model.LocalUIConfigInput, error) {
 	res, err := ec.unmarshalInputLocalUiConfigInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -120581,20 +120623,6 @@ func (ec *executionContext) marshalNUnmatchedUrlPath2ᚖgithubᚗcomᚋodigosᚑ
 	return ec._UnmatchedUrlPath(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNUnmatchedUrlPaths2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPaths(ctx context.Context, sel ast.SelectionSet, v model.UnmatchedURLPaths) graphql.Marshaler {
-	return ec._UnmatchedUrlPaths(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNUnmatchedUrlPaths2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUnmatchedURLPaths(ctx context.Context, sel ast.SelectionSet, v *model.UnmatchedURLPaths) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._UnmatchedUrlPaths(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNUrlTemplatizationDefaultGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroup(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationDefaultGroup) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -120662,6 +120690,16 @@ func (ec *executionContext) marshalNUrlTemplatizationExistingConfig2ᚖgithubᚗ
 		return graphql.Null
 	}
 	return ec._UrlTemplatizationExistingConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUrlTemplatizationLiveTrafficLearning2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationLiveTrafficLearning(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationLiveTrafficLearning) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UrlTemplatizationLiveTrafficLearning(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUrlTemplatizationRecommendedRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRecommendedRuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.URLTemplatizationRecommendedRule) graphql.Marshaler {

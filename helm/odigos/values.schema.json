@@ -151,7 +151,7 @@
     },
     "cacheDb": {
       "additionalProperties": false,
-      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is enterprise-only\nand requires an on-prem token).\nBackend is an implementation detail (default image is Redis); values stay backend-agnostic\nso the chart can switch to another cache (e.g. Memcached) without renaming this section.",
+      "description": "Shared cache DB used by Odigos features that need a cluster-local cache\n(for example cardinality-control URL templatization rule computation).\nDeployed when a consuming feature is enabled (currently\ncardinalityControl.urlTemplatization.liveTrafficLearning.enabled, which is\nenterprise-only and requires an on-prem token).\nBackend is an implementation detail (default image is Redis); values stay backend-agnostic\nso the chart can switch to another cache (e.g. Memcached) without renaming this section.",
       "properties": {
         "image": {
           "default": "redis:7.4.2",
@@ -194,7 +194,28 @@
               "additionalProperties": false,
               "description": "Learn URL templatization rules from live traffic based on path segment\noccurrence counts. Enterprise-only — requires an on-prem token\n(onPremToken / odigos-pro secret). Enabling this deploys the shared\ncache under cacheDb.",
               "properties": {
+                "autoApply": {
+                  "additionalProperties": false,
+                  "description": "Automatically apply URL templatization rules learned from live traffic\nwhen they meet the observation threshold. Opt-in; unset/empty keeps\nauto-apply off (rules are only suggested).",
+                  "properties": {
+                    "enabled": {
+                      "default": "",
+                      "description": "When true, automatically applies learned URL templatization rules\nthat meet minObservations. Opt-in; unset/empty keeps auto-apply off.",
+                      "required": [],
+                      "title": "enabled"
+                    },
+                    "minObservations": {
+                      "default": "100",
+                      "description": "Minimum number of path observations required before a learned rule\nis automatically applied. Default: 100.",
+                      "required": [],
+                      "title": "minObservations"
+                    }
+                  },
+                  "required": [],
+                  "title": "autoApply"
+                },
                 "enabled": {
+                  "default": "",
                   "description": "When true, enables live-traffic learning of URL templatization rules.\nOpt-in; unset/empty keeps the feature off.",
                   "required": [],
                   "title": "enabled"

@@ -128,6 +128,12 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 			if scope.SourceScopeMatchesContainer(rules.Scopes, pw, language) {
 				participating = true
 				templates = append(templates, rules.Templates...)
+				for _, documented := range rules.DocumentedTemplates {
+					if documented.Template == "" {
+						continue
+					}
+					templates = append(templates, documented.Template)
+				}
 			}
 		}
 	}

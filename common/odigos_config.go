@@ -628,6 +628,20 @@ type InsightsConfiguration struct {
 }
 
 // +kubebuilder:object:generate=true
+// LiveTrafficLearningAutoApplyConfiguration controls automatic application of
+// URL templatization rules learned from live traffic.
+type LiveTrafficLearningAutoApplyConfiguration struct {
+	// Enabled, when true, automatically applies learned URL templatization
+	// rules that meet MinObservations. Opt-in; nil or false keeps auto-apply
+	// off (rules are only suggested).
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+
+	// MinObservations is the minimum number of path observations required
+	// before a learned rule is automatically applied. Defaults to 100 when unset.
+	MinObservations *int `json:"minObservations,omitempty" yaml:"minObservations,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
 // LiveTrafficLearningConfiguration toggles learning URL templatization rules
 // from live traffic. Disabled unless Enabled is set; when on, Odigos records
 // unmatched HTTP paths and suggests templatization rules.
@@ -636,6 +650,10 @@ type LiveTrafficLearningConfiguration struct {
 	// live traffic (HTTP spans with a path but no http.route / url.template).
 	// Enterprise-only; disabled unless explicitly true.
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+
+	// AutoApply controls whether learned rules are applied automatically
+	// when they meet the observation threshold.
+	AutoApply *LiveTrafficLearningAutoApplyConfiguration `json:"autoApply,omitempty" yaml:"autoApply,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

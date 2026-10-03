@@ -57,34 +57,38 @@ func unmatchedRedisClient() (*redis.Client, error) {
 	return unmatchedRedis, nil
 }
 
-func emptyUnmatchedUrlPaths() *model.UnmatchedURLPaths {
-	return &model.UnmatchedURLPaths{
+func emptyLiveTrafficLearning() *model.URLTemplatizationLiveTrafficLearning {
+	return &model.URLTemplatizationLiveTrafficLearning{
 		Server:                 []*model.UnmatchedURLPath{},
 		Client:                 []*model.UnmatchedURLPath{},
 		ServerRecommendedRules: []*model.URLTemplatizationRecommendedRule{},
 		ClientRecommendedRules: []*model.URLTemplatizationRecommendedRule{},
-		ExistingConfigs:        []*model.URLTemplatizationExistingConfig{},
 	}
 }
 
-// GetUnmatchedUrlPaths returns client/server unmatched HTTP path counts for a workload
-// from cacheDb Redis, and recommended templatization rules computed on the fly from
-// those current counts (shared algorithm in common/urltemplate).
+// GetWorkloadUrlTemplatization returns the resolved UrlTemplatization config for a
+// workload (existingConfigs) plus live-traffic learning data: unmatched HTTP path
+// counts from cacheDb Redis and recommended rules computed on the fly from those
+// counts (shared algorithm in common/urltemplate).
 // Paths that already match an accepted URL templatization rule for the workload are
 // omitted from both the path lists and the recommended-rule input.
-// ExistingConfigs is the resolved UrlTemplatization config from InstrumentationConfig.
-func GetUnmatchedUrlPaths(ctx context.Context, namespace, kind, name string) (*model.UnmatchedURLPaths, error) {
+// When live traffic learning is disabled, existingConfigs are still returned and
+// liveTrafficLearning is empty.
+func GetWorkloadUrlTemplatization(ctx context.Context, namespace, kind, name string) (*model.K8sWorkloadURLTemplatization, error) {
+	existingConfigs, existingRules, err := loadExistingUrlTemplatizationFromIC(ctx, namespace, kind, name)
+	if err != nil {
+		return nil, err
+	}
+
 	cfg, err := getOdigosConfiguration(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if cfg == nil || !common.UrlTemplatizationLiveTrafficLearningActive(cfg.CardinalityControl) {
-		return emptyUnmatchedUrlPaths(), nil
-	}
-
-	existingConfigs, existingRules, err := loadExistingUrlTemplatizationFromIC(ctx, namespace, kind, name)
-	if err != nil {
-		return nil, err
+		return &model.K8sWorkloadURLTemplatization{
+			ExistingConfigs:     existingConfigs,
+			LiveTrafficLearning: emptyLiveTrafficLearning(),
+		}, nil
 	}
 
 	rdb, err := unmatchedRedisClient()
@@ -105,12 +109,14 @@ func GetUnmatchedUrlPaths(ctx context.Context, namespace, kind, name string) (*m
 	server = filterPathsNotMatchingRules(server, existingRules)
 	client = filterPathsNotMatchingRules(client, existingRules)
 
-	return &model.UnmatchedURLPaths{
-		Server:                 server,
-		Client:                 client,
-		ServerRecommendedRules: recommendedRulesFromPaths(server),
-		ClientRecommendedRules: recommendedRulesFromPaths(client),
-		ExistingConfigs:        existingConfigs,
+	return &model.K8sWorkloadURLTemplatization{
+		ExistingConfigs: existingConfigs,
+		LiveTrafficLearning: &model.URLTemplatizationLiveTrafficLearning{
+			Server:                 server,
+			Client:                 client,
+			ServerRecommendedRules: recommendedRulesFromPaths(server),
+			ClientRecommendedRules: recommendedRulesFromPaths(client),
+		},
 	}, nil
 }
 

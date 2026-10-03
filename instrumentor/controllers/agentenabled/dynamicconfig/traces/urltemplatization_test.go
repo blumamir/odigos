@@ -185,3 +185,43 @@ func TestCalculateUrlTemplatizationConfig_dedupesStatusCodes(t *testing.T) {
 	require.NotNil(t, got.Default.SkipPolicy)
 	require.Equal(t, []int{401, 404, 500}, got.Default.SkipPolicy.SkipHttpStatusCodes)
 }
+
+func TestCalculateUrlTemplatizationConfig_includesDocumentedTemplates(t *testing.T) {
+	agentLevelActions := []odigosv1.Action{{
+		Spec: odigosv1.ActionSpec{
+			URLTemplatization: &urltemplatizationactions.URLTemplatizationConfig{
+				Rules: []urltemplatizationactions.UrlTemplatizationRule{
+					{
+						Templates: []string{"/health", "/users/{id}"},
+						DocumentedTemplates: []urltemplatizationactions.UrlTemplatizationDocumentedTemplate{
+							{
+								Template: "/users/{id}",
+								Examples: []string{"/users/1", "/users/2"},
+								Notes:    "from live traffic",
+							},
+							{
+								Template: "/orders/{orderId}",
+								Examples: []string{"/orders/abc"},
+								Notes:    "recommended",
+							},
+							{
+								Template: "",
+								Notes:    "ignored empty template",
+							},
+						},
+					},
+				},
+				Default: []urltemplatizationactions.URLTemplatizationDefaultTemplatizationGroup{
+					{DefaultTemplatizationConfig: actions.DefaultTemplatizationConfig{Disabled: true}},
+				},
+			},
+		},
+	}}
+	pw := k8sconsts.PodWorkload{Name: "app", Namespace: "default", Kind: k8sconsts.WorkloadKindDeployment}
+
+	got := CalculateUrlTemplatizationConfig(&agentLevelActions, "container", common.JavaProgrammingLanguage, pw)
+
+	require.NotNil(t, got)
+	require.Equal(t, []string{"/health", "/orders/{orderId}", "/users/{id}"}, got.Templates)
+	require.Nil(t, got.Default)
+}

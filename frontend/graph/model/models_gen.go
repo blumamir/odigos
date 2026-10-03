@@ -2047,6 +2047,7 @@ type K8sWorkload struct {
 	DataStreamNames            []string                             `json:"dataStreamNames"`
 	NumberOfInstances          *int                                 `json:"numberOfInstances,omitempty"`
 	RollbackOccurred           bool                                 `json:"rollbackOccurred"`
+	URLTemplatization          *K8sWorkloadURLTemplatization        `json:"urlTemplatization"`
 }
 
 type K8sWorkloadAgentEnabled struct {
@@ -2284,6 +2285,11 @@ type K8sWorkloadTelemetryMetrics struct {
 type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
 	IsExpectingTelemetry    *bool                   `json:"isExpectingTelemetry,omitempty"`
 	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
+}
+
+type K8sWorkloadURLTemplatization struct {
+	ExistingConfigs     []*URLTemplatizationExistingConfig    `json:"existingConfigs"`
+	LiveTrafficLearning *URLTemplatizationLiveTrafficLearning `json:"liveTrafficLearning"`
 }
 
 type KarpenterConfig struct {
@@ -2987,14 +2993,6 @@ type UnmatchedURLPath struct {
 	ContainerName *string `json:"containerName,omitempty"`
 }
 
-type UnmatchedURLPaths struct {
-	Server                 []*UnmatchedURLPath                 `json:"server"`
-	Client                 []*UnmatchedURLPath                 `json:"client"`
-	ServerRecommendedRules []*URLTemplatizationRecommendedRule `json:"serverRecommendedRules"`
-	ClientRecommendedRules []*URLTemplatizationRecommendedRule `json:"clientRecommendedRules"`
-	ExistingConfigs        []*URLTemplatizationExistingConfig  `json:"existingConfigs"`
-}
-
 type URLTemplatizationCardinalityControlConfig struct {
 	LiveTrafficLearning *LiveTrafficLearningConfig `json:"liveTrafficLearning,omitempty"`
 }
@@ -3030,6 +3028,13 @@ type URLTemplatizationExistingConfig struct {
 type URLTemplatizationExistingDefault struct {
 	Disabled   bool                                `json:"disabled"`
 	SkipPolicy *URLTemplatizationDefaultSkipPolicy `json:"skipPolicy,omitempty"`
+}
+
+type URLTemplatizationLiveTrafficLearning struct {
+	Server                 []*UnmatchedURLPath                 `json:"server"`
+	Client                 []*UnmatchedURLPath                 `json:"client"`
+	ServerRecommendedRules []*URLTemplatizationRecommendedRule `json:"serverRecommendedRules"`
+	ClientRecommendedRules []*URLTemplatizationRecommendedRule `json:"clientRecommendedRules"`
 }
 
 type URLTemplatizationRecommendedRule struct {

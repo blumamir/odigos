@@ -112,6 +112,27 @@ cardinalityControl:
       # @schema
       enabled:
 
+      # @schema
+      # description: |-
+      #   Automatically apply URL templatization rules learned from live traffic
+      #   when they meet the observation threshold. Opt-in; unset/empty keeps
+      #   auto-apply off (rules are only suggested).
+      # @schema
+      autoApply:
+        # @schema
+        # description: |-
+        #   When true, automatically applies learned URL templatization rules
+        #   that meet minObservations. Opt-in; unset/empty keeps auto-apply off.
+        # @schema
+        enabled:
+
+        # @schema
+        # description: |-
+        #   Minimum number of path observations required before a learned rule
+        #   is automatically applied. Default: 100.
+        # @schema
+        minObservations: 100
+
 # @schema
 # description: |-
 #   Shared cache DB used by Odigos features that need a cluster-local cache

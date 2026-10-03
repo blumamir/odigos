@@ -45,5 +45,5 @@ Each `RulePathSegment` is one of: static (`StaticString`), wildcard (`Wildcard`)
 
 - `collector/processors/odigosurltemplateprocessor` — parse custom templatization rules and apply default heuristics to paths
 - `collector/processors/odigostailsamplingprocessor` — match sampling rules against `http.route` / path / templated path
-- `frontend` `unmatchedUrlPaths` query — load resolved UrlTemplatization from InstrumentationConfig, filter Redis paths that already match those templates, then compute recommended rules from the remainder; also return existingConfigs (templates + default) per container
+- `frontend` `K8sWorkload.urlTemplatization` field — return existingConfigs (templates + default) per container from InstrumentationConfig, and under liveTrafficLearning filter Redis unmatched paths that already match those templates then compute recommended rules from the remainder
 - enterprise `instrumentor` live-traffic learning job — same learning walk when syncing Action status
