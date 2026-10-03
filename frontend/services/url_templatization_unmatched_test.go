@@ -3,9 +3,14 @@ package services
 import (
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	actionsv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestFilterPathsNotMatchingRules(t *testing.T) {
@@ -41,9 +46,9 @@ func TestUrlTemplatizationConfigToExistingModel(t *testing.T) {
 		},
 	}
 
-	got := urlTemplatizationConfigToExistingModel("app", cfg)
+	got := urlTemplatizationConfigToExistingModel("app", cfg, resolveExistingTemplates(nil, k8sconsts.PodWorkload{}, common.UnknownProgrammingLanguage, cfg))
 	require.Equal(t, "app", got.ContainerName)
-	require.Equal(t, []string{"/users/{id}", "/health"}, got.Templates)
+	require.Equal(t, []string{"/health", "/users/{id}"}, templateStrings(got.Templates))
 	require.NotNil(t, got.Default)
 	require.False(t, got.Default.Disabled)
 	require.NotNil(t, got.Default.SkipPolicy)
@@ -53,9 +58,59 @@ func TestUrlTemplatizationConfigToExistingModel(t *testing.T) {
 }
 
 func TestUrlTemplatizationConfigToExistingModel_NilDefault(t *testing.T) {
-	got := urlTemplatizationConfigToExistingModel("app", &actions.UrlTemplatizationConfig{
-		Templates: []string{"/users/{id}"},
-	})
-	require.Equal(t, []string{"/users/{id}"}, got.Templates)
+	cfg := &actions.UrlTemplatizationConfig{Templates: []string{"/users/{id}"}}
+
+	got := urlTemplatizationConfigToExistingModel("app", cfg, resolveExistingTemplates(nil, k8sconsts.PodWorkload{}, common.UnknownProgrammingLanguage, cfg))
+	require.Equal(t, []string{"/users/{id}"}, templateStrings(got.Templates))
 	require.Nil(t, got.Default)
+}
+
+func templateStrings(templates []*model.URLTemplatizationExistingTemplate) []string {
+	out := make([]string, 0, len(templates))
+	for _, template := range templates {
+		out = append(out, template.Template)
+	}
+	return out
+}
+
+func TestResolveExistingTemplates_FromMatchingActionRules(t *testing.T) {
+	action := odigosv1.Action{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "action-abc",
+			Labels: map[string]string{k8sconsts.OdigosProfilesManagedByLabel: k8sconsts.OdigosUIManagedByValue},
+		},
+		Spec: odigosv1.ActionSpec{
+			ActionName: "URLTemplatization",
+			URLTemplatization: &actionsv1.URLTemplatizationConfig{
+				Rules: []actionsv1.UrlTemplatizationRule{
+					{
+						Scopes: &k8sconsts.SourcesScopes{Namespaces: []string{"default"}},
+						DocumentedTemplates: []actionsv1.UrlTemplatizationDocumentedTemplate{
+							{Template: "/users/{id}", Examples: []string{"/users/123"}, Notes: "learned from live traffic"},
+						},
+					},
+					{
+						Scopes:    &k8sconsts.SourcesScopes{Namespaces: []string{"other"}},
+						Templates: []string{"/not-applied/{id}"},
+					},
+				},
+			},
+		},
+	}
+
+	pw := k8sconsts.PodWorkload{Namespace: "default", Kind: k8sconsts.WorkloadKindDeployment, Name: "api"}
+	cfg := &actions.UrlTemplatizationConfig{Templates: []string{"/users/{id}", "/legacy/{id}"}}
+
+	got := resolveExistingTemplates([]odigosv1.Action{action}, pw, common.GoProgrammingLanguage, cfg)
+	require.Equal(t, []string{"/legacy/{id}", "/users/{id}"}, templateStrings(got))
+
+	// documented rule keeps its learning context and owning action
+	require.Equal(t, []string{"/users/123"}, got[1].Examples)
+	require.Equal(t, "learned from live traffic", *got[1].Notes)
+	require.Equal(t, "action-abc", *got[1].ActionID)
+	require.Equal(t, model.ManagedByOdigosUI, got[1].ManagedBy)
+
+	// template only present in the resolved config is kept without an owning action
+	require.Nil(t, got[0].ActionID)
+	require.Equal(t, model.ManagedByUnknown, got[0].ManagedBy)
 }

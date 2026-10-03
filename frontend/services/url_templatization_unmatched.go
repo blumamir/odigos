@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/redis/go-redis/v9"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -148,23 +149,137 @@ func loadExistingUrlTemplatizationFromIC(ctx context.Context, namespace, kind, n
 	}
 	sort.Strings(names)
 
+	templatizationActions := listUrlTemplatizationActions(ctx)
+	languages := containerLanguagesFromIC(ic)
+	pw := k8sconsts.PodWorkload{Namespace: namespace, Kind: k8sconsts.WorkloadKind(kind), Name: name}
+
 	for _, containerName := range names {
 		cfg := byContainer[containerName]
-		configs = append(configs, urlTemplatizationConfigToExistingModel(containerName, cfg))
-		for _, template := range cfg.Templates {
-			template = strings.TrimSpace(template)
-			if template == "" {
+		resolved := resolveExistingTemplates(templatizationActions, pw, languages[containerName], cfg)
+		configs = append(configs, urlTemplatizationConfigToExistingModel(containerName, cfg, resolved))
+		for _, item := range resolved {
+			if _, ok := seenTemplates[item.Template]; ok {
 				continue
 			}
-			if _, ok := seenTemplates[template]; ok {
-				continue
-			}
-			seenTemplates[template] = struct{}{}
-			templates = append(templates, template)
+			seenTemplates[item.Template] = struct{}{}
+			templates = append(templates, item.Template)
 		}
 	}
 
 	return configs, parseTemplatizationPathRules(templates), nil
+}
+
+// listUrlTemplatizationActions returns the enabled URLTemplatization actions.
+// Best effort: when actions cannot be listed, templates are still reported from
+// the resolved config, just without their examples / notes / owning action.
+func listUrlTemplatizationActions(ctx context.Context) []odigosv1.Action {
+	actions, err := kube.DefaultClient.OdigosClient.Actions(env.GetCurrentNamespace()).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil
+	}
+
+	out := make([]odigosv1.Action, 0, len(actions.Items))
+	for i := range actions.Items {
+		action := actions.Items[i]
+		if action.Spec.Disabled || action.Spec.URLTemplatization == nil {
+			continue
+		}
+		out = append(out, action)
+	}
+	return out
+}
+
+func containerLanguagesFromIC(ic *odigosv1.InstrumentationConfig) map[string]common.ProgrammingLanguage {
+	languages := make(map[string]common.ProgrammingLanguage, len(ic.Status.RuntimeDetailsByContainer))
+	for _, details := range ic.Status.RuntimeDetailsByContainer {
+		languages[details.ContainerName] = details.Language
+	}
+	return languages
+}
+
+// resolveExistingTemplates attributes each template applied to a container to the
+// Action rule group it came from, by iterating the rule scopes the same way the
+// instrumentor does when it resolves the container config.
+// Templates in the resolved config that no longer match any rule are kept without
+// an owning action, so nothing the collector applies is hidden from the user.
+func resolveExistingTemplates(
+	actions []odigosv1.Action,
+	pw k8sconsts.PodWorkload,
+	language common.ProgrammingLanguage,
+	cfg *actionsapi.UrlTemplatizationConfig,
+) []*model.URLTemplatizationExistingTemplate {
+	resolved := make([]*model.URLTemplatizationExistingTemplate, 0, len(cfg.Templates))
+	byTemplate := make(map[string]struct{}, len(cfg.Templates))
+
+	add := func(item *model.URLTemplatizationExistingTemplate) {
+		if item.Template == "" {
+			return
+		}
+		if _, ok := byTemplate[item.Template]; ok {
+			return
+		}
+		byTemplate[item.Template] = struct{}{}
+		resolved = append(resolved, item)
+	}
+
+	for i := range actions {
+		action := &actions[i]
+		actionID := action.Name
+		actionName := action.Spec.ActionName
+		managedBy := managedByFromLabels(action.Labels)
+
+		for _, rules := range action.Spec.URLTemplatization.Rules {
+			if !scope.SourceScopeMatchesContainer(rules.Scopes, pw, language) {
+				continue
+			}
+
+			// Documented templates come first so their examples / notes win over the
+			// same template declared as a plain string.
+			for _, documented := range rules.DocumentedTemplates {
+				examples := documented.Examples
+				if examples == nil {
+					examples = []string{}
+				}
+				add(&model.URLTemplatizationExistingTemplate{
+					Template:   strings.TrimSpace(documented.Template),
+					Examples:   examples,
+					Notes:      nullableString(documented.Notes),
+					ActionID:   &actionID,
+					ActionName: nullableString(actionName),
+					ManagedBy:  managedBy,
+				})
+			}
+
+			for _, template := range rules.Templates {
+				add(&model.URLTemplatizationExistingTemplate{
+					Template:   strings.TrimSpace(template),
+					Examples:   []string{},
+					ActionID:   &actionID,
+					ActionName: nullableString(actionName),
+					ManagedBy:  managedBy,
+				})
+			}
+		}
+	}
+
+	for _, template := range cfg.Templates {
+		add(&model.URLTemplatizationExistingTemplate{
+			Template:  strings.TrimSpace(template),
+			Examples:  []string{},
+			ManagedBy: model.ManagedByUnknown,
+		})
+	}
+
+	sort.Slice(resolved, func(i, j int) bool { return resolved[i].Template < resolved[j].Template })
+	return resolved
+}
+
+func nullableString(value string) *string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
 }
 
 func collectUrlTemplatizationConfigsByContainer(ic *odigosv1.InstrumentationConfig) map[string]*actionsapi.UrlTemplatizationConfig {
@@ -188,10 +303,13 @@ func collectUrlTemplatizationConfigsByContainer(ic *odigosv1.InstrumentationConf
 	return byContainer
 }
 
-func urlTemplatizationConfigToExistingModel(containerName string, cfg *actionsapi.UrlTemplatizationConfig) *model.URLTemplatizationExistingConfig {
-	templates := cfg.Templates
+func urlTemplatizationConfigToExistingModel(
+	containerName string,
+	cfg *actionsapi.UrlTemplatizationConfig,
+	templates []*model.URLTemplatizationExistingTemplate,
+) *model.URLTemplatizationExistingConfig {
 	if templates == nil {
-		templates = []string{}
+		templates = []*model.URLTemplatizationExistingTemplate{}
 	}
 	out := &model.URLTemplatizationExistingConfig{
 		ContainerName: containerName,

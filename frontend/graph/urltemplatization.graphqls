@@ -32,10 +32,22 @@ type UrlTemplatizationExistingDefault {
   skipPolicy: UrlTemplatizationDefaultSkipPolicy
 }
 
+# One template applied to a container, resolved from the URLTemplatization Actions
+# whose rule scopes match the workload. actionId / actionName are null for templates
+# that are present in the resolved config but no longer match any Action rule.
+type UrlTemplatizationExistingTemplate {
+  template: String!
+  examples: [String!]!
+  notes: String
+  actionId: String
+  actionName: String
+  managedBy: ManagedBy!
+}
+
 # Resolved URL templatization config applied to one container of the workload.
 type UrlTemplatizationExistingConfig {
   containerName: String!
-  templates: [String!]!
+  templates: [UrlTemplatizationExistingTemplate!]!
   default: UrlTemplatizationExistingDefault
 }
 

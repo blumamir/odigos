@@ -6,7 +6,14 @@ export const GET_UNMATCHED_URL_PATHS = gql`
       urlTemplatization {
         existingConfigs {
           containerName
-          templates
+          templates {
+            template
+            examples
+            notes
+            actionId
+            actionName
+            managedBy
+          }
           default {
             disabled
             skipPolicy {

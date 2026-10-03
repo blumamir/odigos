@@ -3020,14 +3020,23 @@ type URLTemplatizationDefaultSkipPolicyInput struct {
 }
 
 type URLTemplatizationExistingConfig struct {
-	ContainerName string                            `json:"containerName"`
-	Templates     []string                          `json:"templates"`
-	Default       *URLTemplatizationExistingDefault `json:"default,omitempty"`
+	ContainerName string                               `json:"containerName"`
+	Templates     []*URLTemplatizationExistingTemplate `json:"templates"`
+	Default       *URLTemplatizationExistingDefault    `json:"default,omitempty"`
 }
 
 type URLTemplatizationExistingDefault struct {
 	Disabled   bool                                `json:"disabled"`
 	SkipPolicy *URLTemplatizationDefaultSkipPolicy `json:"skipPolicy,omitempty"`
+}
+
+type URLTemplatizationExistingTemplate struct {
+	Template   string    `json:"template"`
+	Examples   []string  `json:"examples"`
+	Notes      *string   `json:"notes,omitempty"`
+	ActionID   *string   `json:"actionId,omitempty"`
+	ActionName *string   `json:"actionName,omitempty"`
+	ManagedBy  ManagedBy `json:"managedBy"`
 }
 
 type URLTemplatizationLiveTrafficLearning struct {
@@ -4766,22 +4775,24 @@ func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) Marsha
 type ManagedBy string
 
 const (
-	ManagedByProfile           ManagedBy = "Profile"
-	ManagedByOdigosUI          ManagedBy = "OdigosUi"
-	ManagedByInterrogationLoop ManagedBy = "InterrogationLoop"
-	ManagedByUnknown           ManagedBy = "Unknown"
+	ManagedByProfile             ManagedBy = "Profile"
+	ManagedByOdigosUI            ManagedBy = "OdigosUi"
+	ManagedByInterrogationLoop   ManagedBy = "InterrogationLoop"
+	ManagedByLiveTrafficLearning ManagedBy = "LiveTrafficLearning"
+	ManagedByUnknown             ManagedBy = "Unknown"
 )
 
 var AllManagedBy = []ManagedBy{
 	ManagedByProfile,
 	ManagedByOdigosUI,
 	ManagedByInterrogationLoop,
+	ManagedByLiveTrafficLearning,
 	ManagedByUnknown,
 }
 
 func (e ManagedBy) IsValid() bool {
 	switch e {
-	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByUnknown:
+	case ManagedByProfile, ManagedByOdigosUI, ManagedByInterrogationLoop, ManagedByLiveTrafficLearning, ManagedByUnknown:
 		return true
 	}
 	return false
