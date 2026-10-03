@@ -78,10 +78,6 @@ type ActionStatus struct {
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
-
-	// URLTemplatizationLiveTrafficLearning holds findings from live-traffic learning of URL templatization rules.
-	// Populated for URLTemplatization actions when live traffic learning has produced recommendations.
-	URLTemplatizationLiveTrafficLearning *actions.URLTemplatizationLiveTrafficLearningStatus `json:"urlTemplatizationLiveTrafficLearning,omitempty"`
 }
 
 //+genclient

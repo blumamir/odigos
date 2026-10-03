@@ -75,7 +75,6 @@ type URLTemplatizationSegment struct {
 }
 
 // URLTemplatizationLearnedRule is one learned URL templatization recommendation.
-// Presence in status means the recommendation is pending; accepting or rejecting removes it.
 //
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
@@ -88,16 +87,4 @@ type URLTemplatizationLearnedRule struct {
 
 	// Segments lists the templated segments in this rule.
 	Segments []URLTemplatizationSegment `json:"segments,omitempty"`
-}
-
-// URLTemplatizationContainerFindings holds learned URL templatization recommendations for one container.
-//
-// +kubebuilder:object:generate=true
-// +kubebuilder:deepcopy-gen=true
-type URLTemplatizationContainerFindings struct {
-	// ContainerName is the name of the container within the workload.
-	ContainerName string `json:"containerName"`
-
-	// Rules are the learned URL templatization recommendations for this container.
-	Rules []URLTemplatizationLearnedRule `json:"rules,omitempty"`
 }

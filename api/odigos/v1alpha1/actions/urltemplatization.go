@@ -98,24 +98,3 @@ func (URLTemplatizationConfig) SharedProcessorCollectorRoles(spanMetricsEnabled 
 	}
 	return []k8sconsts.CollectorRole{k8sconsts.CollectorsRoleClusterGateway}
 }
-
-// URLTemplatizationWorkloadFindings holds learned URL templatization recommendations for one workload.
-//
-// +kubebuilder:object:generate=true
-// +kubebuilder:deepcopy-gen=true
-type URLTemplatizationWorkloadFindings struct {
-	// Workload identifies the source (namespace, kind, name).
-	Workload k8sconsts.PodWorkload `json:"workload"`
-
-	// Containers lists per-container live traffic learning findings for this workload.
-	Containers []actionsapi.URLTemplatizationContainerFindings `json:"containers,omitempty"`
-}
-
-// URLTemplatizationLiveTrafficLearningStatus holds findings from URL templatization live traffic learning.
-//
-// +kubebuilder:object:generate=true
-// +kubebuilder:deepcopy-gen=true
-type URLTemplatizationLiveTrafficLearningStatus struct {
-	// Workloads lists live traffic learning findings grouped by workload.
-	Workloads []URLTemplatizationWorkloadFindings `json:"workloads,omitempty"`
-}
