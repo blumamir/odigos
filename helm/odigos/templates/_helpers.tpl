@@ -260,12 +260,21 @@ imagePullSecrets:
 {{- end }}
 
 {{/*
-  Fail install/upgrade when liveTrafficLearning.enabled is requested without an enterprise token.
+  Fail install/upgrade when liveTrafficLearning.enabled is requested without an enterprise token,
+  or when automaticRules.enabled is set without liveTrafficLearning.enabled.
   Mirrors odigos.secretExists (onPremToken, odigos-pro secret, or externalOnpremTokenSecret).
 */}}
 {{- define "cardinalityControl.urlTemplatization.liveTrafficLearning.validate" -}}
-{{- if and .Values.cardinalityControl .Values.cardinalityControl.urlTemplatization .Values.cardinalityControl.urlTemplatization.liveTrafficLearning .Values.cardinalityControl.urlTemplatization.liveTrafficLearning.enabled (not (include "odigos.secretExists" .)) -}}
+{{- $ltl := dict -}}
+{{- if and .Values.cardinalityControl .Values.cardinalityControl.urlTemplatization .Values.cardinalityControl.urlTemplatization.liveTrafficLearning -}}
+{{- $ltl = .Values.cardinalityControl.urlTemplatization.liveTrafficLearning -}}
+{{- end -}}
+{{- if and (get $ltl "enabled") (not (include "odigos.secretExists" .)) -}}
 {{- fail "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled is an enterprise feature and requires an on-prem token. Set onPremToken, set externalOnpremTokenSecret to true when providing the odigos-pro secret externally, or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
+{{- end -}}
+{{- $automaticRules := get $ltl "automaticRules" | default dict -}}
+{{- if and (get $automaticRules "enabled") (not (get $ltl "enabled")) -}}
+{{- fail "cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled requires cardinalityControl.urlTemplatization.liveTrafficLearning.enabled to be true." -}}
 {{- end -}}
 {{- end }}
 
@@ -277,13 +286,14 @@ imagePullSecrets:
 {{/*
   Feature-derived default resources for the shared cache when cacheDb.resources is unset.
   Used only by cacheDb.resolvedResources; user-configured resources always win.
-  request == limit for Guaranteed QoS so the cache is not evicted under pressure.
+  Requests are below limits (Burstable QoS): the cache is usually idle and only
+  needs headroom under load / during learning flushes.
 */}}
 {{- define "cacheDb.featureDefaultResources" -}}
 {{- if include "cardinalityControl.urlTemplatization.liveTrafficLearning.enabled" . | eq "true" -}}
 requests:
-  cpu: 200m
-  memory: 256Mi
+  cpu: 50m
+  memory: 64Mi
 limits:
   cpu: 200m
   memory: 256Mi
@@ -292,7 +302,8 @@ limits:
 
 {{/* Effective cache resources: user override, else feature-derived defaults. */}}
 {{- define "cacheDb.resolvedResources" -}}
-{{- $resources := deepCopy (.Values.cacheDb.resources | default dict) -}}
+{{- $cacheDb := .Values.cacheDb | default dict -}}
+{{- $resources := deepCopy (get $cacheDb "resources" | default dict) -}}
 {{- $requests := get $resources "requests" | default dict -}}
 {{- $limits := get $resources "limits" | default dict -}}
 {{- if and (empty $limits) (not (empty $requests)) -}}
@@ -310,8 +321,9 @@ limits:
   effective memory limit (Mi → mb) to leave process overhead headroom.
 */}}
 {{- define "cacheDb.resolvedMaxmemory" -}}
-{{- if .Values.cacheDb.maxmemory -}}
-{{- .Values.cacheDb.maxmemory -}}
+{{- $cacheDb := .Values.cacheDb | default dict -}}
+{{- if get $cacheDb "maxmemory" -}}
+{{- get $cacheDb "maxmemory" -}}
 {{- else -}}
 {{- $resources := include "cacheDb.resolvedResources" . | fromYaml -}}
 {{- $raw := (get (get $resources "limits" | default dict) "memory") | default (get (get $resources "requests" | default dict) "memory") -}}

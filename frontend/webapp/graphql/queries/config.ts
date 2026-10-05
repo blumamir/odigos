@@ -193,7 +193,18 @@ export const GET_EFFECTIVE_CONFIG = gql`
         urlTemplatization {
           liveTrafficLearning {
             enabled
-          }        }
+            maxExamplePathsPerWorkload
+            pathExampleIdleTTL
+            learningInterval
+            ruleComputation {
+              minObservationsForRule
+              minCardinalityForTemplating
+            }
+            automaticRules {
+              enabled
+            }
+          }
+        }
       }
       traceCorrelations {
         serviceIO {

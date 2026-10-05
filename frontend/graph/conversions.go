@@ -453,12 +453,48 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		if config.CardinalityControl.UrlTemplatization != nil {
 			result.CardinalityControl.URLTemplatization = &model.URLTemplatizationCardinalityControlConfig{}
 			if config.CardinalityControl.UrlTemplatization.LiveTrafficLearning != nil {
-				result.CardinalityControl.URLTemplatization.LiveTrafficLearning = &model.LiveTrafficLearningConfig{
-					Enabled: config.CardinalityControl.UrlTemplatization.LiveTrafficLearning.Enabled,
+				ltl := config.CardinalityControl.UrlTemplatization.LiveTrafficLearning
+				ltlModel := &model.LiveTrafficLearningConfig{
+					Enabled:                    ltl.Enabled,
+					MaxExamplePathsPerWorkload: ltl.MaxExamplePathsPerWorkload,
 				}
-				if config.CardinalityControl.UrlTemplatization.LiveTrafficLearning.Enabled != nil {
+				if ltl.Enabled != nil {
 					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.enabled")
 				}
+				if ltl.MaxExamplePathsPerWorkload != nil {
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.maxExamplePathsPerWorkload")
+				}
+				if ltl.PathExampleIdleTTL != "" {
+					ttl := ltl.PathExampleIdleTTL
+					ltlModel.PathExampleIdleTTL = &ttl
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.pathExampleIdleTTL")
+				}
+				if ltl.LearningInterval != "" {
+					interval := ltl.LearningInterval
+					ltlModel.LearningInterval = &interval
+					pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.learningInterval")
+				}
+				if ltl.RuleComputation != nil {
+					ltlModel.RuleComputation = &model.LiveTrafficLearningRuleComputationConfig{
+						MinObservationsForRule:      ltl.RuleComputation.MinObservationsForRule,
+						MinCardinalityForTemplating: ltl.RuleComputation.MinCardinalityForTemplating,
+					}
+					if ltl.RuleComputation.MinObservationsForRule != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minObservationsForRule")
+					}
+					if ltl.RuleComputation.MinCardinalityForTemplating != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.ruleComputation.minCardinalityForTemplating")
+					}
+				}
+				if ltl.AutomaticRules != nil {
+					ltlModel.AutomaticRules = &model.LiveTrafficLearningAutomaticRulesConfig{
+						Enabled: ltl.AutomaticRules.Enabled,
+					}
+					if ltl.AutomaticRules.Enabled != nil {
+						pc.record("cardinalityControl.urlTemplatization.liveTrafficLearning.automaticRules.enabled")
+					}
+				}
+				result.CardinalityControl.URLTemplatization.LiveTrafficLearning = ltlModel
 			}
 		}
 	}

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 type Action struct {
@@ -325,12 +327,12 @@ type CostReductionRule struct {
 }
 
 type CostReductionRuleInput struct {
-	Name             *string                            `json:"name,omitempty"`
-	Disabled         *bool                              `json:"disabled,omitempty"`
-	SourceScopes     *SourcesScopesInput                `json:"sourceScopes,omitempty"`
-	Operation        *TailSamplingOperationMatcherInput `json:"operation,omitempty"`
-	PercentageAtMost float64                            `json:"percentageAtMost"`
-	Notes            *string                            `json:"notes,omitempty"`
+	Name             graphql.Omittable[*string]                            `json:"name,omitempty"`
+	Disabled         graphql.Omittable[*bool]                              `json:"disabled,omitempty"`
+	SourceScopes     graphql.Omittable[*SourcesScopesInput]                `json:"sourceScopes,omitempty"`
+	Operation        graphql.Omittable[*TailSamplingOperationMatcherInput] `json:"operation,omitempty"`
+	PercentageAtMost float64                                               `json:"percentageAtMost"`
+	Notes            graphql.Omittable[*string]                            `json:"notes,omitempty"`
 }
 
 type CustomFormatMasking struct {
@@ -744,14 +746,14 @@ type HighlyRelevantOperationRule struct {
 }
 
 type HighlyRelevantOperationRuleInput struct {
-	Name              *string                            `json:"name,omitempty"`
-	Disabled          *bool                              `json:"disabled,omitempty"`
-	SourceScopes      *SourcesScopesInput                `json:"sourceScopes,omitempty"`
-	Error             *bool                              `json:"error,omitempty"`
-	DurationAtLeastMs *int                               `json:"durationAtLeastMs,omitempty"`
-	Operation         *TailSamplingOperationMatcherInput `json:"operation,omitempty"`
-	PercentageAtLeast *float64                           `json:"percentageAtLeast,omitempty"`
-	Notes             *string                            `json:"notes,omitempty"`
+	Name              graphql.Omittable[*string]                            `json:"name,omitempty"`
+	Disabled          graphql.Omittable[*bool]                              `json:"disabled,omitempty"`
+	SourceScopes      graphql.Omittable[*SourcesScopesInput]                `json:"sourceScopes,omitempty"`
+	Error             graphql.Omittable[*bool]                              `json:"error,omitempty"`
+	DurationAtLeastMs graphql.Omittable[*int]                               `json:"durationAtLeastMs,omitempty"`
+	Operation         graphql.Omittable[*TailSamplingOperationMatcherInput] `json:"operation,omitempty"`
+	PercentageAtLeast graphql.Omittable[*float64]                           `json:"percentageAtLeast,omitempty"`
+	Notes             graphql.Omittable[*string]                            `json:"notes,omitempty"`
 }
 
 type HorizontalPodAutoscalerInfo struct {
@@ -1878,17 +1880,17 @@ type InstrumentationRuleFieldYamlProperties struct {
 }
 
 type InstrumentationRuleInput struct {
-	RuleName                 *string                                 `json:"ruleName,omitempty"`
-	Notes                    *string                                 `json:"notes,omitempty"`
-	Disabled                 *bool                                   `json:"disabled,omitempty"`
-	Workloads                []*PodWorkloadInput                     `json:"workloads,omitempty"`
-	SourcesScopes            []*InstrumentationRuleSourcesScopeInput `json:"sourcesScopes,omitempty"`
-	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput  `json:"instrumentationLibraries,omitempty"`
-	CodeAttributes           *CodeAttributesInput                    `json:"codeAttributes,omitempty"`
-	HeadersCollection        *HeadersCollectionInput                 `json:"headersCollection,omitempty"`
-	PayloadCollection        *PayloadCollectionInput                 `json:"payloadCollection,omitempty"`
-	CustomInstrumentations   *CustomInstrumentationsInput            `json:"customInstrumentations,omitempty"`
-	NetworkMetrics           *bool                                   `json:"networkMetrics,omitempty"`
+	RuleName                 *string                                                    `json:"ruleName,omitempty"`
+	Notes                    *string                                                    `json:"notes,omitempty"`
+	Disabled                 *bool                                                      `json:"disabled,omitempty"`
+	Workloads                []*PodWorkloadInput                                        `json:"workloads,omitempty"`
+	SourcesScopes            graphql.Omittable[[]*InstrumentationRuleSourcesScopeInput] `json:"sourcesScopes,omitempty"`
+	InstrumentationLibraries graphql.Omittable[[]*InstrumentationLibraryGlobalIDInput]  `json:"instrumentationLibraries,omitempty"`
+	CodeAttributes           *CodeAttributesInput                                       `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollectionInput                                    `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollectionInput                                    `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentationsInput                               `json:"customInstrumentations,omitempty"`
+	NetworkMetrics           *bool                                                      `json:"networkMetrics,omitempty"`
 }
 
 type InstrumentationRuleSourcesScope struct {
@@ -2301,8 +2303,22 @@ type LanguageConfig struct {
 	EnvVars *string `json:"envVars,omitempty"`
 }
 
-type LiveTrafficLearningConfig struct {
+type LiveTrafficLearningAutomaticRulesConfig struct {
 	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LiveTrafficLearningConfig struct {
+	Enabled                    *bool                                     `json:"enabled,omitempty"`
+	MaxExamplePathsPerWorkload *int                                      `json:"maxExamplePathsPerWorkload,omitempty"`
+	PathExampleIdleTTL         *string                                   `json:"pathExampleIdleTTL,omitempty"`
+	LearningInterval           *string                                   `json:"learningInterval,omitempty"`
+	RuleComputation            *LiveTrafficLearningRuleComputationConfig `json:"ruleComputation,omitempty"`
+	AutomaticRules             *LiveTrafficLearningAutomaticRulesConfig  `json:"automaticRules,omitempty"`
+}
+
+type LiveTrafficLearningRuleComputationConfig struct {
+	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
 }
 
 type LocalUIConfigAllowConcurrentAgentsInput struct {
@@ -2313,6 +2329,10 @@ type LocalUIConfigAutoRollbackInput struct {
 	Disabled            *bool   `json:"disabled,omitempty"`
 	GraceTime           *string `json:"graceTime,omitempty"`
 	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
+}
+
+type LocalUIConfigCardinalityControlInput struct {
+	URLTemplatization *LocalUIConfigURLTemplatizationCardinalityControlInput `json:"urlTemplatization,omitempty"`
 }
 
 type LocalUIConfigComponentLogLevelsInput struct {
@@ -2341,11 +2361,29 @@ type LocalUIConfigInput struct {
 	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
 	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
 	TraceCorrelations     *LocalUIConfigTraceCorrelationsInput     `json:"traceCorrelations,omitempty"`
+	CardinalityControl    *LocalUIConfigCardinalityControlInput    `json:"cardinalityControl,omitempty"`
 }
 
 type LocalUIConfigInstrumentorInput struct {
 	AgentEnvVarsInjectionMethod      *EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
 	CheckDeviceHealthBeforeInjection *bool               `json:"checkDeviceHealthBeforeInjection,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningAutomaticRulesInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningInput struct {
+	MaxExamplePathsPerWorkload *int                                                  `json:"maxExamplePathsPerWorkload,omitempty"`
+	PathExampleIdleTTL         *string                                               `json:"pathExampleIdleTTL,omitempty"`
+	LearningInterval           *string                                               `json:"learningInterval,omitempty"`
+	RuleComputation            *LocalUIConfigLiveTrafficLearningRuleComputationInput `json:"ruleComputation,omitempty"`
+	AutomaticRules             *LocalUIConfigLiveTrafficLearningAutomaticRulesInput  `json:"automaticRules,omitempty"`
+}
+
+type LocalUIConfigLiveTrafficLearningRuleComputationInput struct {
+	MinObservationsForRule      *int `json:"minObservationsForRule,omitempty"`
+	MinCardinalityForTemplating *int `json:"minCardinalityForTemplating,omitempty"`
 }
 
 type LocalUIConfigRolloutInput struct {
@@ -2376,6 +2414,10 @@ type LocalUIConfigTraceCorrelationsServiceIOInput struct {
 	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
 	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
 	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
+}
+
+type LocalUIConfigURLTemplatizationCardinalityControlInput struct {
+	LiveTrafficLearning *LocalUIConfigLiveTrafficLearningInput `json:"liveTrafficLearning,omitempty"`
 }
 
 type MessagingPayloadCollection struct {
@@ -2477,12 +2519,12 @@ type NoisyOperationRule struct {
 }
 
 type NoisyOperationRuleInput struct {
-	Name             *string                            `json:"name,omitempty"`
-	Disabled         *bool                              `json:"disabled,omitempty"`
-	SourceScopes     *SourcesScopesInput                `json:"sourceScopes,omitempty"`
-	Operation        *HeadSamplingOperationMatcherInput `json:"operation,omitempty"`
-	PercentageAtMost *float64                           `json:"percentageAtMost,omitempty"`
-	Notes            *string                            `json:"notes,omitempty"`
+	Name             graphql.Omittable[*string]                            `json:"name,omitempty"`
+	Disabled         graphql.Omittable[*bool]                              `json:"disabled,omitempty"`
+	SourceScopes     graphql.Omittable[*SourcesScopesInput]                `json:"sourceScopes,omitempty"`
+	Operation        graphql.Omittable[*HeadSamplingOperationMatcherInput] `json:"operation,omitempty"`
+	PercentageAtMost graphql.Omittable[*float64]                           `json:"percentageAtMost,omitempty"`
+	Notes            graphql.Omittable[*string]                            `json:"notes,omitempty"`
 }
 
 type NonIdentifyingAttribute struct {
@@ -2985,12 +3027,6 @@ type URLTemplatizationRuleInput struct {
 	Template string   `json:"template"`
 	Notes    *string  `json:"notes,omitempty"`
 	Examples []string `json:"examples,omitempty"`
-}
-
-type UnmatchedURLPath struct {
-	Path          string  `json:"path"`
-	Count         int     `json:"count"`
-	ContainerName *string `json:"containerName,omitempty"`
 }
 
 type URLTemplatizationCardinalityControlConfig struct {

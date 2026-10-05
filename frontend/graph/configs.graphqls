@@ -156,8 +156,22 @@ type ProfilingConfig {
   enabled: Boolean
 }
 
+type LiveTrafficLearningAutomaticRulesConfig {
+  enabled: Boolean
+}
+
+type LiveTrafficLearningRuleComputationConfig {
+  minObservationsForRule: Int
+  minCardinalityForTemplating: Int
+}
+
 type LiveTrafficLearningConfig {
   enabled: Boolean
+  maxExamplePathsPerWorkload: Int
+  pathExampleIdleTTL: String
+  learningInterval: String
+  ruleComputation: LiveTrafficLearningRuleComputationConfig
+  automaticRules: LiveTrafficLearningAutomaticRulesConfig
 }
 
 type UrlTemplatizationCardinalityControlConfig {
@@ -378,6 +392,34 @@ input LocalUiConfigTraceCorrelationsInput {
   serviceIO: LocalUiConfigTraceCorrelationsServiceIOInput
 }
 
+input LocalUiConfigLiveTrafficLearningAutomaticRulesInput {
+  enabled: Boolean
+}
+
+input LocalUiConfigLiveTrafficLearningRuleComputationInput {
+  minObservationsForRule: Int
+  minCardinalityForTemplating: Int
+}
+
+input LocalUiConfigLiveTrafficLearningInput {
+  # enabled is Helm-only (deploys cacheDb); UI may override
+  # maxExamplePathsPerWorkload, pathExampleIdleTTL, learningInterval,
+  # ruleComputation, and automaticRules.
+  maxExamplePathsPerWorkload: Int
+  pathExampleIdleTTL: String
+  learningInterval: String
+  ruleComputation: LocalUiConfigLiveTrafficLearningRuleComputationInput
+  automaticRules: LocalUiConfigLiveTrafficLearningAutomaticRulesInput
+}
+
+input LocalUiConfigUrlTemplatizationCardinalityControlInput {
+  liveTrafficLearning: LocalUiConfigLiveTrafficLearningInput
+}
+
+input LocalUiConfigCardinalityControlInput {
+  urlTemplatization: LocalUiConfigUrlTemplatizationCardinalityControlInput
+}
+
 input LocalUiConfigInput {
   telemetryEnabled: Boolean
   ignoredNamespaces: [String!]
@@ -393,6 +435,7 @@ input LocalUiConfigInput {
   sampling: LocalUiConfigSamplingInput
   componentLogLevels: LocalUiConfigComponentLogLevelsInput
   traceCorrelations: LocalUiConfigTraceCorrelationsInput
+  cardinalityControl: LocalUiConfigCardinalityControlInput
 }
 
 type ConfigYamlField {
