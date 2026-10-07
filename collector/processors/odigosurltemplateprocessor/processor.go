@@ -61,18 +61,7 @@ type urlTemplateProcessor struct {
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
 
-	parsedRules := map[int][]urltemplate.PathRule{}
-	for _, rule := range config.TemplatizationRules {
-		parsedRule, err := urltemplate.ParseUserInputRuleString(rule, false)
-		if err != nil {
-			return nil, err
-		}
-		parsedRuleNumSegments := len(parsedRule.Segments)
-		if _, ok := parsedRules[parsedRuleNumSegments]; !ok {
-			parsedRules[parsedRuleNumSegments] = []urltemplate.PathRule{}
-		}
-		parsedRules[parsedRuleNumSegments] = append(parsedRules[parsedRuleNumSegments], parsedRule)
-	}
+	parsedRules := urltemplate.ParseRulesBySegmentCount(config.TemplatizationRules)
 
 	customIdsRegexp := make([]internalCustomIdConfig, 0, len(config.CustomIds))
 	for _, ci := range config.CustomIds {
@@ -161,7 +150,7 @@ func (p *urlTemplateProcessor) OnDeleteKey(key string) {
 }
 
 // parseRuleStrings parses a slice of rule strings into a map of segment-count → rules.
-// Each string is parsed via urltemplate.ParseUserInputRuleString; invalid rules are skipped with a warning.
+// Invalid rules are skipped with a warning.
 func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]urltemplate.PathRule {
 	parsed := map[int][]urltemplate.PathRule{}
 	for _, rule := range ruleStrings {
@@ -170,8 +159,7 @@ func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]
 			p.logger.Warn("invalid templatization rule; skipping", zap.String("rule", rule), zap.Error(err))
 			continue
 		}
-		n := len(parsedRule.Segments)
-		parsed[n] = append(parsed[n], parsedRule)
+		urltemplate.AppendRuleBySegmentCount(parsed, parsedRule)
 	}
 	return parsed
 }

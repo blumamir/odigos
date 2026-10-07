@@ -4,24 +4,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 )
 
 const (
-	// DefaultMaxExamplePathsPerWorkload caps distinct unmatched HTTP paths
-	// stored per workload for live-traffic learning when
-	// MaxExamplePathsPerWorkload is unset or ≤ 0.
-	DefaultMaxExamplePathsPerWorkload = 5000
-
-	// DefaultPathExampleIdleTTL is the sliding idle window for an unmatched
-	// path example in cacheDb. After this long without a new observation the
-	// field expires so another path can take the quota slot. Must stay well
-	// above collector flush and learning intervals. Used when
-	// PathExampleIdleTTL is unset or invalid.
-	DefaultPathExampleIdleTTL = 48 * time.Hour
-
 	// minNodeTotalObservations is the minimum TotalObservations for a node to be
 	// considered (#1). Below this we wait for more data.
 	minNodeTotalObservations int64 = 100
