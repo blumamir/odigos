@@ -33,9 +33,9 @@ const (
 	InsightsGatewayExporter = "otlp_grpc/insights"
 )
 
-// OpenTelemetry component instance name for URL templatization live traffic learning
-// rules: enterprise exporter appended to the root traces pipeline. Logs HTTP
-// spans that still lack http.route / url.template (cacheDb write comes later).
+// OpenTelemetry component instance name for URL templatization live traffic learning:
+// enterprise exporter appended to the root traces pipeline that writes unmatched
+// HTTP path counts to cacheDb Redis.
 const (
 	UrlTemplatizationExporter = "odigos_url_templatization"
 )

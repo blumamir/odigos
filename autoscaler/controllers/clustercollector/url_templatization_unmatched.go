@@ -1,11 +1,14 @@
 package clustercollector
 
 import (
+	"time"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
+	"github.com/odigos-io/odigos/common/urltemplate"
 )
 
 // effectiveCardinalityControl returns the cardinality-control config the gateway
@@ -42,10 +45,41 @@ func addUrlTemplatizationUnmatchedExporter(c *config.Config, odigosNs string, ca
 	c.Exporters[commonconf.UrlTemplatizationExporter] = config.GenericMap{
 		"odigos_config_extension": k8sconsts.OdigosConfigK8sExtensionType,
 		"endpoint":                k8sconsts.OdigosCacheEndpoint(odigosNs),
+		"max_paths_per_workload":  maxExamplePathsPerWorkload(cardinalityControl),
+		"path_idle_ttl":           pathExampleIdleTTL(cardinalityControl),
 	}
 
 	rootPipeline.Exporters = append(rootPipeline.Exporters, commonconf.UrlTemplatizationExporter)
 	c.Service.Pipelines[rootPipelineName] = rootPipeline
 
 	return nil
+}
+
+func liveTrafficLearningConfig(cardinalityControl *common.CardinalityControlConfiguration) *common.LiveTrafficLearningConfiguration {
+	if cardinalityControl == nil ||
+		cardinalityControl.UrlTemplatization == nil {
+		return nil
+	}
+	return cardinalityControl.UrlTemplatization.LiveTrafficLearning
+}
+
+func maxExamplePathsPerWorkload(cardinalityControl *common.CardinalityControlConfiguration) int {
+	ltl := liveTrafficLearningConfig(cardinalityControl)
+	if ltl == nil {
+		return urltemplate.ResolveMaxExamplePathsPerWorkload(nil)
+	}
+	return urltemplate.ResolveMaxExamplePathsPerWorkload(ltl.MaxExamplePathsPerWorkload)
+}
+
+func pathExampleIdleTTL(cardinalityControl *common.CardinalityControlConfiguration) string {
+	ltl := liveTrafficLearningConfig(cardinalityControl)
+	raw := ""
+	if ltl != nil {
+		raw = ltl.PathExampleIdleTTL
+	}
+	d := urltemplate.ResolvePathExampleIdleTTL(raw)
+	if parsed, err := time.ParseDuration(raw); err == nil && parsed == d && parsed > 0 {
+		return raw
+	}
+	return "48h"
 }
