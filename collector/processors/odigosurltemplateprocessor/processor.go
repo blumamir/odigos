@@ -61,7 +61,14 @@ type urlTemplateProcessor struct {
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
 
-	parsedRules := urltemplate.ParseRulesBySegmentCount(config.TemplatizationRules)
+	parsedRules := map[int][]urltemplate.PathRule{}
+	for _, rule := range config.TemplatizationRules {
+		parsedRule, err := urltemplate.ParseUserInputRuleString(rule, false)
+		if err != nil {
+			return nil, err
+		}
+		urltemplate.AppendRuleBySegmentCount(parsedRules, parsedRule)
+	}
 
 	customIdsRegexp := make([]internalCustomIdConfig, 0, len(config.CustomIds))
 	for _, ci := range config.CustomIds {
@@ -150,7 +157,7 @@ func (p *urlTemplateProcessor) OnDeleteKey(key string) {
 }
 
 // parseRuleStrings parses a slice of rule strings into a map of segment-count → rules.
-// Invalid rules are skipped with a warning.
+// Each string is parsed via urltemplate.ParseUserInputRuleString; invalid rules are skipped with a warning.
 func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]urltemplate.PathRule {
 	parsed := map[int][]urltemplate.PathRule{}
 	for _, rule := range ruleStrings {
