@@ -3031,6 +3031,12 @@ type URLTemplatizationRuleInput struct {
 	Examples []string `json:"examples,omitempty"`
 }
 
+type UnmatchedURLPath struct {
+	Path          string  `json:"path"`
+	Count         int     `json:"count"`
+	ContainerName *string `json:"containerName,omitempty"`
+}
+
 type URLTemplatizationCardinalityControlConfig struct {
 	LiveTrafficLearning *LiveTrafficLearningConfig `json:"liveTrafficLearning,omitempty"`
 }
@@ -3092,6 +3098,7 @@ type URLTemplatizationRecommendedRule struct {
 
 type URLTemplatizationRecommendedSegment struct {
 	TemplateName string   `json:"templateName"`
+	Static       bool     `json:"static"`
 	Certainty    string   `json:"certainty"`
 	Examples     []string `json:"examples"`
 }

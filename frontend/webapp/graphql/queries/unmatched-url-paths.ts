@@ -38,6 +38,7 @@ export const GET_UNMATCHED_URL_PATHS = gql`
             reason
             segments {
               templateName
+              static
               certainty
               examples
             }
@@ -47,6 +48,7 @@ export const GET_UNMATCHED_URL_PATHS = gql`
             reason
             segments {
               templateName
+              static
               certainty
               examples
             }

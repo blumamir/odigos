@@ -368,40 +368,27 @@ func pathMatchesAnyRule(path string, rules []urltemplate.PathRule) bool {
 	return false
 }
 
+// RecommendLiveTrafficRulesFromCounts turns unmatched path Redis hash fields
+// (path -> count string) into recommended URL templatization rules for the UI.
+// Enterprise UI wires this to common-enterprise live-traffic learning; the OSS
+// default returns no suggestions.
+var RecommendLiveTrafficRulesFromCounts = func(pathCounts map[string]string) []*model.URLTemplatizationRecommendedRule {
+	return nil
+}
+
 func recommendedRulesFromPaths(paths []*model.UnmatchedURLPath) []*model.URLTemplatizationRecommendedRule {
-	counts := make(map[string]int64, len(paths))
+	aggregated := make(map[string]int64, len(paths))
 	for _, item := range paths {
 		if item == nil || item.Path == "" {
 			continue
 		}
-		counts[item.Path] += int64(item.Count)
+		aggregated[item.Path] += int64(item.Count)
 	}
-	learned := urltemplate.FindLiveTrafficLearningRules(urltemplate.BuildPathTrieFromCounts(counts))
-	return toRecommendedRuleModels(learned)
-}
-
-func toRecommendedRuleModels(rules []actionsapi.URLTemplatizationLearnedRule) []*model.URLTemplatizationRecommendedRule {
-	out := make([]*model.URLTemplatizationRecommendedRule, 0, len(rules))
-	for _, rule := range rules {
-		segments := make([]*model.URLTemplatizationRecommendedSegment, 0, len(rule.Segments))
-		for _, seg := range rule.Segments {
-			examples := seg.Examples
-			if examples == nil {
-				examples = []string{}
-			}
-			segments = append(segments, &model.URLTemplatizationRecommendedSegment{
-				TemplateName: seg.TemplateName,
-				Certainty:    string(seg.Certainty),
-				Examples:     examples,
-			})
-		}
-		out = append(out, &model.URLTemplatizationRecommendedRule{
-			Template: rule.Template,
-			Reason:   rule.Reason,
-			Segments: segments,
-		})
+	pathCounts := make(map[string]string, len(aggregated))
+	for path, count := range aggregated {
+		pathCounts[path] = strconv.FormatInt(count, 10)
 	}
-	return out
+	return RecommendLiveTrafficRulesFromCounts(pathCounts)
 }
 
 func loadUnmatchedPaths(ctx context.Context, rdb *redis.Client, kindPrefix, workloadPrefix string) ([]*model.UnmatchedURLPath, error) {

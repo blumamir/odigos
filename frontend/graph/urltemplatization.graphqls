@@ -16,6 +16,8 @@ type UnmatchedUrlPath {
 
 type UrlTemplatizationRecommendedSegment {
   templateName: String!
+  # True for concrete path literals; false for dynamic * / {name} segments.
+  static: Boolean!
   certainty: String!
   examples: [String!]!
 }

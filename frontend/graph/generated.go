@@ -2343,6 +2343,12 @@ type ComplexityRoot struct {
 		Template func(childComplexity int) int
 	}
 
+	UnmatchedUrlPath struct {
+		ContainerName func(childComplexity int) int
+		Count         func(childComplexity int) int
+		Path          func(childComplexity int) int
+	}
+
 	UrlTemplatizationCardinalityControlConfig struct {
 		LiveTrafficLearning func(childComplexity int) int
 	}
@@ -2394,6 +2400,7 @@ type ComplexityRoot struct {
 	UrlTemplatizationRecommendedSegment struct {
 		Certainty    func(childComplexity int) int
 		Examples     func(childComplexity int) int
+		Static       func(childComplexity int) int
 		TemplateName func(childComplexity int) int
 	}
 
@@ -13410,6 +13417,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.URLTemplatizationRule.Template(childComplexity), true
 
+	case "UnmatchedUrlPath.containerName":
+		if e.complexity.UnmatchedUrlPath.ContainerName == nil {
+			break
+		}
+
+		return e.complexity.UnmatchedUrlPath.ContainerName(childComplexity), true
+
+	case "UnmatchedUrlPath.count":
+		if e.complexity.UnmatchedUrlPath.Count == nil {
+			break
+		}
+
+		return e.complexity.UnmatchedUrlPath.Count(childComplexity), true
+
+	case "UnmatchedUrlPath.path":
+		if e.complexity.UnmatchedUrlPath.Path == nil {
+			break
+		}
+
+		return e.complexity.UnmatchedUrlPath.Path(childComplexity), true
+
 	case "UrlTemplatizationCardinalityControlConfig.liveTrafficLearning":
 		if e.complexity.UrlTemplatizationCardinalityControlConfig.LiveTrafficLearning == nil {
 			break
@@ -13591,6 +13619,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UrlTemplatizationRecommendedSegment.Examples(childComplexity), true
+
+	case "UrlTemplatizationRecommendedSegment.static":
+		if e.complexity.UrlTemplatizationRecommendedSegment.Static == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationRecommendedSegment.Static(childComplexity), true
 
 	case "UrlTemplatizationRecommendedSegment.templateName":
 		if e.complexity.UrlTemplatizationRecommendedSegment.TemplateName == nil {
@@ -88060,6 +88095,135 @@ func (ec *executionContext) fieldContext_URLTemplatizationRule_examples(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _UnmatchedUrlPath_path(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPath) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UnmatchedUrlPath_path(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Path, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UnmatchedUrlPath_path(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UnmatchedUrlPath",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UnmatchedUrlPath_count(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPath) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UnmatchedUrlPath_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UnmatchedUrlPath_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UnmatchedUrlPath",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UnmatchedUrlPath_containerName(ctx context.Context, field graphql.CollectedField, obj *model.UnmatchedURLPath) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UnmatchedUrlPath_containerName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainerName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UnmatchedUrlPath_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UnmatchedUrlPath",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationCardinalityControlConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UrlTemplatizationCardinalityControlConfig_liveTrafficLearning(ctx, field)
 	if err != nil {
@@ -89166,6 +89330,8 @@ func (ec *executionContext) fieldContext_UrlTemplatizationRecommendedRule_segmen
 			switch field.Name {
 			case "templateName":
 				return ec.fieldContext_UrlTemplatizationRecommendedSegment_templateName(ctx, field)
+			case "static":
+				return ec.fieldContext_UrlTemplatizationRecommendedSegment_static(ctx, field)
 			case "certainty":
 				return ec.fieldContext_UrlTemplatizationRecommendedSegment_certainty(ctx, field)
 			case "examples":
@@ -89216,6 +89382,50 @@ func (ec *executionContext) fieldContext_UrlTemplatizationRecommendedSegment_tem
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationRecommendedSegment_static(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRecommendedSegment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationRecommendedSegment_static(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Static, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationRecommendedSegment_static(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationRecommendedSegment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -113572,6 +113782,52 @@ func (ec *executionContext) _URLTemplatizationRule(ctx context.Context, sel ast.
 	return out
 }
 
+var unmatchedUrlPathImplementors = []string{"UnmatchedUrlPath"}
+
+func (ec *executionContext) _UnmatchedUrlPath(ctx context.Context, sel ast.SelectionSet, obj *model.UnmatchedURLPath) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, unmatchedUrlPathImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UnmatchedUrlPath")
+		case "path":
+			out.Values[i] = ec._UnmatchedUrlPath_path(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._UnmatchedUrlPath_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "containerName":
+			out.Values[i] = ec._UnmatchedUrlPath_containerName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var urlTemplatizationCardinalityControlConfigImplementors = []string{"UrlTemplatizationCardinalityControlConfig"}
 
 func (ec *executionContext) _UrlTemplatizationCardinalityControlConfig(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationCardinalityControlConfig) graphql.Marshaler {
@@ -113944,6 +114200,11 @@ func (ec *executionContext) _UrlTemplatizationRecommendedSegment(ctx context.Con
 			out.Values[i] = graphql.MarshalString("UrlTemplatizationRecommendedSegment")
 		case "templateName":
 			out.Values[i] = ec._UrlTemplatizationRecommendedSegment_templateName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "static":
+			out.Values[i] = ec._UrlTemplatizationRecommendedSegment_static(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

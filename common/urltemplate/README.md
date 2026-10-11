@@ -1,8 +1,11 @@
 # urltemplate
 
-Shared helpers for URL **path rules**, default segment classification, and live-traffic learning.
+Shared helpers for URL **path rules** and default segment classification.
 
-Shared segment-based path rule parsing/matching, built-in heuristics for classifying path segments as templates (`{id}`, `{date}`, `{email}`), and the live-traffic learning walk that suggests templatization rules from unmatched path counts. It lives under `common` so it has no Kubernetes or collector-specific dependencies.
+Shared segment-based path rule parsing/matching and built-in heuristics for classifying path segments as templates (`{id}`, `{date}`, `{email}`). It lives under `common` so it has no Kubernetes or collector-specific dependencies.
+
+Live-traffic learning (path tries and rule suggestions) lives in the enterprise
+`common-enterprise/urltemplatization` module.
 
 ## Path rule syntax
 
@@ -36,8 +39,6 @@ rule.IsPathSegmentsMatching(segments) // exact, or prefix when PathRule.Prefix i
 - `SplitPath` — split a concrete path into segments and whether it had a leading `/`
 - `PathRule.IsPathSegmentsMatching` — exact match, or prefix match when `Prefix` is true
 - `SegmentTemplateName` — classify a path segment with built-in heuristics; returns `"id"`, `"date"`, `"email"`, or `""` if static
-- `BuildPathTrie` / `BuildPathTrieFromCounts` — index unmatched path counts for live-traffic learning
-- `FindLiveTrafficLearningRules` — suggest templatization rules from a path trie
 
 Each `RulePathSegment` is one of: static (`StaticString`), wildcard (`Wildcard`), or template (`TemplateName`).
 
