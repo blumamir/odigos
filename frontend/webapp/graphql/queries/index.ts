@@ -14,7 +14,6 @@ export * from './peer-sources';
 export * from './unmatched-url-paths';
 export * from './profiling';
 export * from './service-map';
-export * from './trace-correlations';
 export * from './source';
 export * from './tokens';
 export * from './recommendations';
